@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Activity, Zap, ChevronDown, ChevronUp, Play, RotateCcw, Clock } from 'lucide-react';
+import { Dumbbell, Activity, Zap, ChevronDown, ChevronUp, Play, RotateCcw, Clock, Info } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout, RestDay } from '../types';
+import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface WeeklyPlanProps {
   state: AppState;
@@ -32,6 +33,7 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
   const navigate = useNavigate();
   const { weekPlan, logs } = state;
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
+  const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
 
   const today = new Date();
   const todayDayIndex = today.getDay();
@@ -111,11 +113,22 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
                   isDone={done}
                   onToggle={() => setExpandedDay(isExpanded ? null : day)}
                   onStartWorkout={() => navigate(`/treino/${day}`)}
+                  onOpenDemo={(id, name, muscles) => setSelectedDemo({ id, name, muscles })}
                 />
               </div>
             );
           })}
         </div>
+
+        {/* Exercise Demo Modal */}
+        {selectedDemo && (
+          <ExerciseDemoModal
+            exerciseId={selectedDemo.id}
+            exerciseName={selectedDemo.name}
+            muscleGroups={selectedDemo.muscles}
+            onClose={() => setSelectedDemo(null)}
+          />
+        )}
 
         {/* Periodization info */}
         <div className="glass-card animate-fade-in" style={{ padding: 20, marginTop: 24 }}>
@@ -159,9 +172,10 @@ interface DayCardProps {
   isDone: boolean;
   onToggle: () => void;
   onStartWorkout: () => void;
+  onOpenDemo: (id: string, name: string, muscles: string[]) => void;
 }
 
-function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone, onToggle, onStartWorkout }: DayCardProps) {
+function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone, onToggle, onStartWorkout, onOpenDemo }: DayCardProps) {
   const color = workout.type === 'musculacao' ? 'var(--accent-orange)' :
     workout.type === 'corrida' ? 'var(--accent-cyan)' : 'var(--text-muted)';
 
@@ -258,7 +272,7 @@ function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone,
 
           {/* Strength workout details */}
           {workout.type === 'musculacao' && (
-            <StrengthDetails workout={workout as StrengthWorkout} />
+            <StrengthDetails workout={workout as StrengthWorkout} onOpenDemo={onOpenDemo} />
           )}
 
           {/* Run workout details */}
@@ -293,22 +307,34 @@ function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone,
   );
 }
 
-function StrengthDetails({ workout }: { workout: StrengthWorkout }) {
+function StrengthDetails({
+  workout,
+  onOpenDemo,
+}: {
+  workout: StrengthWorkout;
+  onOpenDemo: (id: string, name: string, muscles: string[]) => void;
+}) {
   return (
     <div>
       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12 }}>
-        EXERCÍCIOS
+        EXERCÍCIOS (CLIQUE PARA VER O GUIA & DEMO)
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {workout.exercises.map((ex, i) => (
-          <div key={ex.id} style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 12,
-            padding: '10px 12px',
-            background: 'var(--bg-elevated)',
-            borderRadius: 'var(--radius-md)',
-          }}>
+          <div
+            key={ex.id}
+            onClick={() => onOpenDemo(ex.id, ex.name, ex.muscleGroups)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '10px 12px',
+              background: 'var(--bg-elevated)',
+              borderRadius: 'var(--radius-md)',
+              cursor: 'pointer',
+              transition: 'background var(--transition-fast)',
+            }}
+          >
             <div style={{
               width: 24, height: 24,
               borderRadius: 6,
@@ -320,12 +346,15 @@ function StrengthDetails({ workout }: { workout: StrengthWorkout }) {
             }}>
               {i + 1}
             </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>
-                {ex.name}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{ex.name}</span>
+                <Info size={13} style={{ color: 'var(--accent-lime)' }} />
               </div>
               {ex.technique && (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{ex.technique}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {ex.technique}
+                </div>
               )}
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>

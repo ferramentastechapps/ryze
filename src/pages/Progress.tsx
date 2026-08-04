@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut } from 'lucide-react';
+import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, CartesianGrid, RadialBarChart, RadialBar, Legend,
 } from 'recharts';
 import type { AppState, WorkoutLog } from '../types';
 import { getProgressStats, resetApp } from '../store/appStore';
+import { EXERCISE_GUIDES, type ExerciseGuide } from '../data/exerciseGuides';
+import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface ProgressProps {
   state: AppState;
@@ -15,8 +17,9 @@ interface ProgressProps {
 export default function Progress({ state }: ProgressProps) {
   const navigate = useNavigate();
   const { logs, profile } = state;
-  const [activeTab, setActiveTab] = useState<'overview' | 'strength' | 'running' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'strength' | 'running' | 'history' | 'library'>('overview');
   const [showReset, setShowReset] = useState(false);
+  const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
 
   const stats = getProgressStats(logs);
   const completed = logs.filter(l => l.completed);
@@ -127,6 +130,7 @@ export default function Progress({ state }: ProgressProps) {
         }}>
           {([
             { key: 'overview', label: 'Geral', icon: <BarChart2 size={14} /> },
+            { key: 'library', label: 'Guias & Demos', icon: <BookOpen size={14} /> },
             { key: 'strength', label: 'Força', icon: <Dumbbell size={14} /> },
             { key: 'running', label: 'Corrida', icon: <Activity size={14} /> },
             { key: 'history', label: 'Histórico', icon: <Calendar size={14} /> },
@@ -139,15 +143,15 @@ export default function Progress({ state }: ProgressProps) {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: 6,
-                padding: '10px 8px',
+                gap: 4,
+                padding: '10px 4px',
                 borderRadius: 'var(--radius-md)',
                 background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
                 border: `1px solid ${activeTab === tab.key ? 'var(--border-medium)' : 'transparent'}`,
                 color: activeTab === tab.key ? 'var(--accent-lime)' : 'var(--text-muted)',
                 fontFamily: 'var(--font-ui)',
                 fontWeight: 600,
-                fontSize: 12,
+                fontSize: 11,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
@@ -162,6 +166,9 @@ export default function Progress({ state }: ProgressProps) {
         {activeTab === 'overview' && (
           <OverviewTab weeklyData={weeklyData} stats={stats} logs={completed} />
         )}
+        {activeTab === 'library' && (
+          <LibraryTab onSelectExercise={(id, name, muscles) => setSelectedDemo({ id, name, muscles })} />
+        )}
         {activeTab === 'strength' && (
           <StrengthTab logs={completed.filter(l => l.workout.type === 'musculacao')} />
         )}
@@ -170,6 +177,16 @@ export default function Progress({ state }: ProgressProps) {
         )}
         {activeTab === 'history' && (
           <HistoryTab workouts={recentWorkouts} />
+        )}
+
+        {/* Exercise Demo Modal */}
+        {selectedDemo && (
+          <ExerciseDemoModal
+            exerciseId={selectedDemo.id}
+            exerciseName={selectedDemo.name}
+            muscleGroups={selectedDemo.muscles}
+            onClose={() => setSelectedDemo(null)}
+          />
         )}
       </div>
     </div>
@@ -416,6 +433,140 @@ function HistoryTab({ workouts }: { workouts: WorkoutLog[] }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function LibraryTab({ onSelectExercise }: { onSelectExercise: (id: string, name: string, muscles: string[]) => void }) {
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('todos');
+
+  const guidesList = Object.values(EXERCISE_GUIDES);
+
+  const categories = [
+    { id: 'todos', label: 'Todos' },
+    { id: 'peito', label: 'Peito' },
+    { id: 'costas', label: 'Costas' },
+    { id: 'pernas', label: 'Pernas' },
+    { id: 'ombros', label: 'Ombros' },
+    { id: 'biceps', label: 'Bíceps' },
+    { id: 'triceps', label: 'Tríceps' },
+    { id: 'gluteos', label: 'Glúteos' },
+  ];
+
+  const filtered = guidesList.filter(g => {
+    const matchesCategory = categoryFilter === 'todos' || g.category === categoryFilter;
+    const matchesSearch = g.name.toLowerCase().includes(search.toLowerCase()) ||
+      g.primaryMuscles.some(m => m.toLowerCase().includes(search.toLowerCase()));
+    return matchesCategory && matchesSearch;
+  });
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* Search Input */}
+      <div style={{ position: 'relative' }}>
+        <Search size={16} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+        <input
+          type="text"
+          className="form-input"
+          placeholder="Buscar exercício ou grupo muscular..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ paddingLeft: 44 }}
+        />
+      </div>
+
+      {/* Category Pills */}
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+        {categories.map(cat => (
+          <button
+            key={cat.id}
+            onClick={() => setCategoryFilter(cat.id)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-full)',
+              border: `1px solid ${categoryFilter === cat.id ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
+              background: categoryFilter === cat.id ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+              color: categoryFilter === cat.id ? 'var(--accent-lime)' : 'var(--text-muted)',
+              fontFamily: 'var(--font-ui)',
+              fontWeight: 600,
+              fontSize: 12,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s',
+            }}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Exercise Cards List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {filtered.map(guide => {
+          const color = guide.category === 'peito' || guide.category === 'pernas'
+            ? 'var(--accent-orange)'
+            : guide.category === 'costas' || guide.category === 'gluteos'
+            ? 'var(--accent-cyan)'
+            : 'var(--accent-lime)';
+
+          return (
+            <div
+              key={guide.id}
+              className="glass-card"
+              onClick={() => onSelectExercise(guide.id, guide.name, [guide.category])}
+              style={{
+                padding: '14px 16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                width: 44, height: 44,
+                borderRadius: 12,
+                background: color + '22',
+                border: `1px solid ${color}44`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'var(--font-display)',
+                fontSize: 18,
+                color,
+                flexShrink: 0,
+              }}>
+                💪
+              </div>
+
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>{guide.name}</span>
+                  <span className="badge badge-lime" style={{ fontSize: 9, background: color + '22', color, border: `1px solid ${color}44` }}>
+                    {guide.category.toUpperCase()}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {guide.primaryMuscles.join(', ')}
+                </div>
+              </div>
+
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 4,
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-full)',
+                background: 'var(--accent-lime-dim)',
+                color: 'var(--accent-lime)',
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'var(--font-ui)',
+                flexShrink: 0,
+              }}>
+                <Info size={13} />
+                Guia
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

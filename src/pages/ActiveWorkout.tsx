@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, Clock, Trophy, X, Plus, Minus } from 'lucide-react';
+import { Check, ChevronLeft, Clock, Trophy, X, Plus, Minus, Info, Activity } from 'lucide-react';
 import type { AppState, StrengthWorkout, RunWorkout, Exercise, LoggedSet } from '../types';
 import { logWorkout } from '../store/appStore';
+import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface ActiveWorkoutProps {
   state: AppState;
@@ -24,6 +25,7 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
   const [isRunning, setIsRunning] = useState(true);
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
   const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -249,10 +251,25 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
                     isActive={isActive}
                     accentColor={accentColor}
                     onToggle={() => toggleExercise(exercise.id, exercise.rest)}
+                    onOpenDemo={() => setSelectedDemo({
+                      id: exercise.id,
+                      name: exercise.name,
+                      muscles: exercise.muscleGroups,
+                    })}
                   />
                 );
               })}
             </div>
+
+            {/* Exercise Demo Modal */}
+            {selectedDemo && (
+              <ExerciseDemoModal
+                exerciseId={selectedDemo.id}
+                exerciseName={selectedDemo.name}
+                muscleGroups={selectedDemo.muscles}
+                onClose={() => setSelectedDemo(null)}
+              />
+            )}
 
             {/* Finish button */}
             <div style={{ marginTop: 32 }}>
@@ -372,6 +389,7 @@ function ExerciseCard({
   isActive,
   accentColor,
   onToggle,
+  onOpenDemo,
 }: {
   exercise: Exercise;
   index: number;
@@ -379,6 +397,7 @@ function ExerciseCard({
   isActive: boolean;
   accentColor: string;
   onToggle: () => void;
+  onOpenDemo: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -429,6 +448,31 @@ function ExerciseCard({
             {exercise.sets} séries · {exercise.reps} reps · {exercise.rest}s descanso
           </div>
         </div>
+
+        {/* Demo Button */}
+        <button
+          onClick={onOpenDemo}
+          title="Ver Demonstração e Execução"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            padding: '6px 10px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-full)',
+            color: 'var(--accent-lime)',
+            fontFamily: 'var(--font-ui)',
+            fontWeight: 700,
+            fontSize: 11,
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+        >
+          <Info size={13} />
+          Guia
+        </button>
 
         {/* Sets/Reps badge */}
         <div style={{
