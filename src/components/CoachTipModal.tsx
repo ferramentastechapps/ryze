@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Sparkles, Check, Activity, Target, ShieldCheck, Zap, ArrowUpRight } from 'lucide-react';
+import { X, Sparkles, Check, Activity, Target, ShieldCheck, Zap, Layers, Flame } from 'lucide-react';
 
 interface CoachTipModalProps {
   tipText: string;
@@ -9,13 +9,19 @@ interface CoachTipModalProps {
 }
 
 export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'musculacao', onClose }: CoachTipModalProps) {
-  const [phase, setPhase] = useState<'Controlada' | 'Pausa de Ativação' | 'Contração Explosiva'>('Controlada');
+  const [phaseIndex, setPhaseIndex] = useState(0);
   const [progress, setProgress] = useState(0);
+
+  const phases = [
+    { name: 'Excêntrica (Desida)', duration: '3s', desc: 'Controle o peso resistindo à gravidade', color: 'var(--accent-cyan)' },
+    { name: 'Pausa Isométrica', duration: '1s', desc: 'Ativação máxima no ponto de tensão', color: 'var(--accent-orange)' },
+    { name: 'Concêntrica (Puxada/Empurrão)', duration: '2s', desc: 'Força explosiva para vencer a carga', color: 'var(--accent-lime)' },
+  ];
 
   // Biomechanical cycle timer
   useEffect(() => {
     let startTime = Date.now();
-    const cycleDuration = 4000;
+    const cycleDuration = 4000; // 4s cycle
 
     const interval = setInterval(() => {
       const elapsed = (Date.now() - startTime) % cycleDuration;
@@ -23,16 +29,18 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
       setProgress(pct);
 
       if (pct < 0.55) {
-        setPhase('Controlada');
-      } else if (pct < 0.72) {
-        setPhase('Pausa de Ativação');
+        setPhaseIndex(0);
+      } else if (pct < 0.75) {
+        setPhaseIndex(1);
       } else {
-        setPhase('Contração Explosiva');
+        setPhaseIndex(2);
       }
     }, 40);
 
     return () => clearInterval(interval);
   }, []);
+
+  const currentPhase = phases[phaseIndex];
 
   return (
     <div
@@ -40,7 +48,7 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(4, 4, 8, 0.88)',
+        background: 'rgba(4, 4, 8, 0.90)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         display: 'flex',
@@ -56,39 +64,41 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
         style={{
           width: '100%',
           maxWidth: 580,
-          maxHeight: '90vh',
+          maxHeight: '88vh',
           display: 'flex',
           flexDirection: 'column',
           background: '#0B0B14',
-          border: '1px solid rgba(155,89,255,0.3)',
+          border: '1px solid rgba(155,89,255,0.35)',
           borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(155,89,255,0.15)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(155,89,255,0.18)',
           overflow: 'hidden',
           animation: 'fadeInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
+        {/* Opaque Solid Header - Prevents content bleed on scroll */}
         <div style={{
           padding: '18px 24px',
-          borderBottom: '1px solid var(--border-subtle)',
+          borderBottom: '1px solid var(--border-medium)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          background: 'linear-gradient(135deg, rgba(155,89,255,0.12) 0%, rgba(200,255,0,0.05) 100%)',
+          background: '#121220',
           flexShrink: 0,
+          position: 'relative',
+          zIndex: 10,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
-              width: 38, height: 38,
+              width: 40, height: 40,
               borderRadius: 12,
-              background: 'rgba(155,89,255,0.2)',
-              border: '1px solid rgba(155,89,255,0.35)',
+              background: 'rgba(155,89,255,0.22)',
+              border: '1px solid rgba(155,89,255,0.4)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--accent-purple)',
               flexShrink: 0,
             }}>
-              <Sparkles size={18} />
+              <Sparkles size={20} />
             </div>
             <div>
               <div style={{
@@ -101,7 +111,7 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
               }}>
                 ORIENTAÇÃO DO COACH RYZE
               </div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--text-primary)', marginTop: 2 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text-primary)', marginTop: 2 }}>
                 {workoutTitle || 'Treino do Dia'}
               </div>
             </div>
@@ -115,85 +125,167 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
           </button>
         </div>
 
-        {/* Modal Scrollable Body */}
-        <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, flex: 1, boxSizing: 'border-box' }}>
-          
-          {/* Animated Biomechanics Cadence Visualizer */}
+        {/* Scrollable Modal Content */}
+        <div style={{
+          padding: '24px',
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 20,
+          flex: 1,
+          boxSizing: 'border-box',
+        }}>
+
+          {/* 1. Cadência & Animação Biomecânica Widget */}
           <div style={{
             background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-subtle)',
+            border: '1px solid var(--border-medium)',
             borderRadius: 'var(--radius-lg)',
-            padding: '16px 18px',
+            padding: '20px',
             position: 'relative',
-            overflow: 'hidden',
+            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--accent-lime)', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                <Activity size={14} /> CADÊNCIA BIOMECÂNICA RECOMENDADA
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: 'var(--accent-lime)', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <Activity size={16} /> CADÊNCIA BIOMECÂNICA RECOMENDADA
               </div>
               <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
-                Tempo ideal: 3s — 1s — 2s
+                Tempo Total: 4s por repetição
               </span>
             </div>
 
-            {/* Dynamic Progress Indicator */}
-            <div style={{ height: 8, background: 'rgba(255,255,255,0.06)', borderRadius: 4, overflow: 'hidden', marginBottom: 12 }}>
+            {/* Visual Contraction Graphic Box */}
+            <div style={{
+              height: 100,
+              background: 'radial-gradient(ellipse 90% 90% at 50% 50%, rgba(155,89,255,0.12) 0%, #08080E 100%)',
+              border: '1px solid rgba(155,89,255,0.2)',
+              borderRadius: 'var(--radius-md)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 16,
+              position: 'relative',
+              overflow: 'hidden',
+            }}>
+              {/* Pulse Ring */}
+              <div style={{
+                position: 'absolute',
+                width: 70 + progress * 40,
+                height: 70 + progress * 40,
+                borderRadius: '50%',
+                border: `2px solid ${currentPhase.color}`,
+                opacity: 0.4 - progress * 0.3,
+                transition: 'all 0.1s linear',
+              }} />
+
+              <div style={{
+                fontSize: 12,
+                fontWeight: 700,
+                color: currentPhase.color,
+                fontFamily: 'var(--font-ui)',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                marginBottom: 4,
+              }}>
+                FASE ATUAL: {currentPhase.name} ({currentPhase.duration})
+              </div>
+
+              <div style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 500, textAlign: 'center', padding: '0 16px' }}>
+                {currentPhase.desc}
+              </div>
+            </div>
+
+            {/* Dynamic Cadence Progress Bar */}
+            <div style={{ height: 8, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden', marginBottom: 14 }}>
               <div style={{
                 height: '100%',
                 width: `${progress * 100}%`,
-                background: phase === 'Controlada' ? 'var(--accent-cyan)' : phase === 'Pausa de Ativação' ? 'var(--accent-orange)' : 'var(--accent-lime)',
+                background: currentPhase.color,
                 borderRadius: 4,
                 transition: 'width 0.05s linear',
               }} />
             </div>
 
-            {/* Current Phase Status Badge */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
-                Fase Atual: <strong style={{ color: 'var(--text-primary)' }}>{phase}</strong>
-              </div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: 999,
-                background: phase === 'Controlada' ? 'rgba(0,212,255,0.15)' : phase === 'Pausa de Ativação' ? 'rgba(255,95,31,0.15)' : 'rgba(200,255,0,0.15)',
-                color: phase === 'Controlada' ? 'var(--accent-cyan)' : phase === 'Pausa de Ativação' ? 'var(--accent-orange)' : 'var(--accent-lime)',
-                fontFamily: 'var(--font-ui)',
-              }}>
-                {phase === 'Controlada' ? 'Desida Retida 3s' : phase === 'Pausa de Ativação' ? 'Pausa no Pico 1s' : 'Subida Explosiva 2s'}
-              </div>
+            {/* Phase Selector Pills */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+              {phases.map((p, idx) => (
+                <div key={idx} style={{
+                  padding: '8px',
+                  borderRadius: 'var(--radius-md)',
+                  background: phaseIndex === idx ? `${p.color}20` : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${phaseIndex === idx ? p.color : 'rgba(255,255,255,0.06)'}`,
+                  textAlign: 'center',
+                  transition: 'all 0.2s',
+                }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: phaseIndex === idx ? p.color : 'var(--text-muted)', fontFamily: 'var(--font-ui)' }}>
+                    {p.duration}
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 600, color: phaseIndex === idx ? 'var(--text-primary)' : 'var(--text-secondary)', marginTop: 2 }}>
+                    {idx === 0 ? 'Desida' : idx === 1 ? 'Pausa' : 'Subida'}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
-          {/* Coach Advice Text Box */}
+          {/* 2. Coach Quote & Specific Technical Advice */}
           <div style={{
-            padding: '18px',
-            background: 'rgba(155,89,255,0.08)',
+            padding: '20px',
+            background: 'rgba(155,89,255,0.1)',
+            border: '1px solid rgba(155,89,255,0.3)',
             borderLeft: '4px solid var(--accent-purple)',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: 'var(--radius-lg)',
           }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-purple)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'var(--font-ui)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Zap size={14} /> ORIENTAÇÃO TÉCNICA PRINCIPAL
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--accent-purple)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'var(--font-ui)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Zap size={15} /> ORIENTAÇÃO TÉCNICA DO DIA
             </div>
-            <p style={{ fontSize: 14, color: 'var(--text-primary)', lineHeight: 1.6, margin: 0, fontWeight: 500 }}>
+            <p style={{ fontSize: 15, color: 'var(--text-primary)', lineHeight: 1.65, margin: 0, fontWeight: 500 }}>
               "{tipText}"
             </p>
           </div>
 
-          {/* 3 Key Principles for Execution */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12 }}>
-              REGRAS DE EXECUÇÃO HOJE
+          {/* 3. Target Muscle Chips & Focus */}
+          <div style={{
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '18px 20px',
+          }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Target size={14} style={{ color: 'var(--accent-orange)' }} /> FOCOS DE ATIVAÇÃO NO TREINO
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {['Conexão Mente-Músculo', 'Retração Escapular', 'Controle Excêntrico 3s', 'Zero Impulso / Roubo'].map((chip, i) => (
+                <span key={i} style={{
+                  padding: '6px 12px',
+                  borderRadius: 999,
+                  background: 'rgba(200,255,0,0.08)',
+                  border: '1px solid rgba(200,255,0,0.2)',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: 'var(--accent-lime)',
+                  fontFamily: 'var(--font-ui)',
+                }}>
+                  ✓ {chip}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* 4. Execution Directives List */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <ShieldCheck size={14} style={{ color: 'var(--accent-cyan)' }} /> REGRAS PARA MÁXIMO RESULTADO HOJE
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {[
-                { title: 'Conexão Mente-Músculo', desc: 'Concentre a força no músculo alvo principal sem roubar com os sinergistas.' },
-                { title: 'Amplitude Completa', desc: 'Alongue o músculo completamente no ponto inicial e esprema no final.' },
-                { title: 'Respiração Guiada', desc: 'Expire durante o esforço (fase concêntrica) e inspire na fase de controle.' },
+                { title: '1. Ativação Escapular Antes de Puxar', desc: 'Deprima e junte as escápulas antes de flexionar os cotovelos para isolar a dorsal.' },
+                { title: '2. Alongamento Fascial Completo', desc: 'No final da fase excêntrica, sinta a musculatura alongar por completo sem perder a tensão.' },
+                { title: '3. Exalação na Fase de Esforço', desc: 'Solte o ar vigorosamente ao vencer a carga (concêntrica) e inspire ao retornar.' },
               ].map((item, idx) => (
                 <div key={idx} style={{
-                  padding: '12px 14px',
+                  padding: '14px 16px',
                   background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
                   borderRadius: 'var(--radius-md)',
@@ -202,22 +294,22 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
                   gap: 12,
                 }}>
                   <div style={{
-                    width: 24, height: 24,
+                    width: 26, height: 26,
                     borderRadius: '50%',
                     background: 'var(--accent-lime-dim)',
                     color: 'var(--accent-lime)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 12, fontWeight: 700,
                     flexShrink: 0,
-                    marginTop: 1,
+                    marginTop: 2,
                   }}>
                     {idx + 1}
                   </div>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>
                       {item.title}
                     </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, lineHeight: 1.4 }}>
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 4, lineHeight: 1.5 }}>
                       {item.desc}
                     </div>
                   </div>
@@ -228,18 +320,20 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
 
         </div>
 
-        {/* Footer Action */}
+        {/* Opaque Solid Footer Action */}
         <div style={{
-          padding: '14px 24px',
-          borderTop: '1px solid var(--border-subtle)',
-          background: 'rgba(0,0,0,0.4)',
+          padding: '16px 24px',
+          borderTop: '1px solid var(--border-medium)',
+          background: '#121220',
           display: 'flex',
           justifyContent: 'flex-end',
           flexShrink: 0,
+          position: 'relative',
+          zIndex: 10,
         }}>
           <button
             className="btn btn-primary"
-            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px' }}
             onClick={onClose}
           >
             <Check size={18} />
