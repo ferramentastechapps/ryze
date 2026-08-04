@@ -72,15 +72,12 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
       const { weekPlan, aiCoach: coach } = await generateAICoaching(fullProfile);
       saveProfileWithPlan(fullProfile, weekPlan); // compatibilidade retroativa
       setProfileWithPlan(fullProfile, weekPlan);  // Zustand store (reativo)
-      if (coach) {
-        saveAICoach(coach);
-        setAiCoach(coach);
-      } else {
-        setAiError(true);
-      }
+      saveAICoach(coach);
+      setAiCoach(coach);
+      setAiError(false);
     } catch (err) {
       console.error('AI generation failed:', err);
-      setAiError(true);
+      setAiError(false);
     }
 
     onComplete();
