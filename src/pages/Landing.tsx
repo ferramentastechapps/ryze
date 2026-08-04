@@ -125,7 +125,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
           margin: '0 auto',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src="/Logo.png" alt="RYZE" style={{ height: 38, width: 'auto', objectFit: 'contain' }} />
+            <img src="/logo-capa.png" alt="RYZE" style={{ height: 42, width: 'auto', objectFit: 'contain' }} />
           </div>
 
           {isOnboarded ? (
@@ -397,7 +397,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
           color: 'var(--text-muted)',
           fontSize: 13,
         }}>
-          <img src="/Logo.png" alt="RYZE" style={{ height: 32, width: 'auto', margin: '0 auto 8px', display: 'block', objectFit: 'contain' }} />
+          <img src="/logo-capa.png" alt="RYZE" style={{ height: 36, width: 'auto', margin: '0 auto 8px', display: 'block', objectFit: 'contain' }} />
           <p>Baseado em ciência. Feito para resultados.</p>
         </footer>
       </div>

@@ -98,7 +98,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
         <div className="container" style={{ paddingBottom: 40 }}>
           {/* Header Brand */}
           <div style={{ paddingTop: 16, paddingBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <img src="/Logo.png" alt="RYZE" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+            <img src="/logo-capa.png" alt="RYZE" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
           </div>
 
           {/* Greeting */}

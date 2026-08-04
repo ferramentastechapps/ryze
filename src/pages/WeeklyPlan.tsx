@@ -66,7 +66,7 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         {/* Header Brand */}
         <div style={{ paddingTop: 16, paddingBottom: 16 }}>
-          <img src="/Logo.png" alt="RYZE" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+          <img src="/logo-capa.png" alt="RYZE" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
         </div>
 
         {/* Header */}

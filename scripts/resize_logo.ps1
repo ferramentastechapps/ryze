@@ -19,6 +19,29 @@ function Resize-Image($srcPath, $destPath, $width, $height) {
     $srcImg.Dispose()
 }
 
+function Resize-ImageMaxHeight($srcPath, $destPath, $maxHeight) {
+    $srcImg = [System.Drawing.Image]::FromFile($srcPath)
+    $aspect = $srcImg.Width / $srcImg.Height
+    $newHeight = [int]$maxHeight
+    $newWidth = [int]($maxHeight * $aspect)
+    
+    $newBmp = New-Object System.Drawing.Bitmap($newWidth, $newHeight)
+    $graphics = [System.Drawing.Graphics]::FromImage($newBmp)
+    
+    $graphics.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $graphics.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+    $graphics.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+    $graphics.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+    
+    $graphics.DrawImage($srcImg, 0, 0, $newWidth, $newHeight)
+    
+    $newBmp.Save($destPath, [System.Drawing.Imaging.ImageFormat]::Png)
+    
+    $graphics.Dispose()
+    $newBmp.Dispose()
+    $srcImg.Dispose()
+}
+
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $publicDir = Join-Path $scriptDir "..\public"
 
@@ -33,4 +56,11 @@ Resize-Image $targetLogo (Join-Path $publicDir "icon-192.png") 192 192
 Resize-Image $targetLogo (Join-Path $publicDir "apple-touch-icon.png") 180 180
 Resize-Image $targetLogo (Join-Path $publicDir "favicon.png") 64 64
 
-Write-Host "All logo icons generated successfully from logo novo.png!"
+# Web-optimize logo-capa.png from logo capa.png
+$sourceCapa = Join-Path $publicDir "logo capa.png"
+$targetCapa = Join-Path $publicDir "logo-capa.png"
+if (Test-Path $sourceCapa) {
+    Resize-ImageMaxHeight $sourceCapa $targetCapa 160
+}
+
+Write-Host "All logo icons and logo-capa generated successfully!"
