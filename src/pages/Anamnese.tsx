@@ -474,24 +474,25 @@ function Step2({ profile, update }: { profile: Partial<UserProfile>; update: (k:
                 onClick={() => update('hasGymAccess', opt.v)}
                 style={{
                   flex: 1,
-                  padding: '14px',
+                  padding: '14px 6px',
                   borderRadius: 'var(--radius-md)',
                   border: `2px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
                   background: isSelected ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
                   color: 'var(--text-primary)',
                   fontWeight: 600,
-                  fontSize: 14,
+                  fontSize: 13,
                   cursor: 'pointer',
                   transition: 'all 0.2s',
                   fontFamily: 'var(--font-ui)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 8,
+                  gap: 6,
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Icon size={16} style={{ color: isSelected ? 'var(--accent-lime)' : 'var(--text-muted)' }} />
-                {opt.label}
+                <Icon size={16} style={{ color: isSelected ? 'var(--accent-lime)' : 'var(--text-muted)', flexShrink: 0 }} />
+                <span>{opt.label}</span>
               </button>
             );
           })}
