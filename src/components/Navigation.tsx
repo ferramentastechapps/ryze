@@ -1,28 +1,37 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Calendar, TrendingUp, User } from 'lucide-react';
+import { LayoutDashboard, CalendarDays, TrendingUp, User } from 'lucide-react';
 
 export default function Navigation() {
   const location = useLocation();
 
+  // Hide nav on active workout route (/treino/...)
+  if (location.pathname.startsWith('/treino/')) {
+    return null;
+  }
+
   const navItems = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Hoje' },
-    { to: '/plano', icon: Calendar, label: 'Plano' },
+    { to: '/plano', icon: CalendarDays, label: 'Plano' },
     { to: '/progresso', icon: TrendingUp, label: 'Progresso' },
+    { to: '/anamnese', icon: User, label: 'Perfil' },
   ];
 
   return (
-    <nav className="nav">
-      <div className="nav-inner">
+    <nav className="nav-container">
+      <div className="nav-dock">
         {navItems.map(({ to, icon: Icon, label }) => {
           const isActive = location.pathname === to;
           return (
             <NavLink
               key={to}
               to={to}
-              className={`nav-item ${isActive ? 'active' : ''}`}
+              className={`nav-dock-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={22} strokeWidth={isActive ? 2 : 1.5} />
-              <span className="nav-label">{label}</span>
+              <div className="nav-icon-wrapper">
+                <Icon size={19} strokeWidth={isActive ? 2.3 : 1.7} />
+              </div>
+              <span className="nav-dock-label">{label}</span>
+              {isActive && <div className="nav-active-dot" />}
             </NavLink>
           );
         })}
