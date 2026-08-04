@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles, BarChart3, Sprout, Flame, Award, Home, Building2, Sunrise, Sun, Moon, Lightbulb, Timer, ShieldAlert } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles, BarChart3, Sprout, Flame, Award, Home, Building2, Sunrise, Sun, Moon, Lightbulb, Timer, ShieldAlert, Calendar, AlertTriangle } from 'lucide-react';
 import { saveProfileWithPlan } from '../store/appStore';
 import { analyzeProfile } from '../engine/aiEngine';
 import { generateAICoaching, saveAICoach, type AICoachResponse } from '../services/geminiService';
@@ -1064,7 +1064,7 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
               background: 'rgba(255,95,31,0.04)',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: 'var(--text-muted)' }}>
-                <span>⚠️</span>
+                <AlertTriangle size={16} style={{ color: 'var(--accent-orange)', flexShrink: 0 }} />
                 <span>IA indisponível no momento. Usando motor de regras científico como fallback. Seu plano está completo!</span>
               </div>
             </div>
@@ -1084,7 +1084,7 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
               </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15 }}>Objetivo Principal</div>
             </div>
-            <div className="badge badge-lime">{goalLabels[profile.primaryGoal]}</div>
+            <div className="badge badge-lime">{goalLabels[profile?.primaryGoal || 'equilibrio'] || 'Equilíbrio Estético'}</div>
           </div>
 
           {/* Weekly load */}
