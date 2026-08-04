@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles, BarChart3, Sprout, Flame, Award, Home, Building2, Sunrise, Sun, Moon, Lightbulb, Timer, ShieldAlert, Calendar, AlertTriangle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles, BarChart3, Sprout, Flame, Award, Home, Building2, Sunrise, Sun, Moon, Lightbulb, Timer, ShieldAlert, Calendar, AlertTriangle, Minus, Plus } from 'lucide-react';
 import { saveProfileWithPlan } from '../store/appStore';
 import { useRyzeStore } from '../store/ryzeStore';
 import { analyzeProfile } from '../engine/aiEngine';
@@ -237,6 +237,159 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
 
 
 
+// ─── Componente de entrada numérica com stepper (- / +) e edição livre ────────
+interface NumericStepperInputProps {
+  label: string;
+  value: number | undefined;
+  defaultValue: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  onChange: (val: number) => void;
+}
+
+function NumericStepperInput({
+  label,
+  value,
+  defaultValue,
+  min = 1,
+  max = 999,
+  step = 1,
+  onChange,
+}: NumericStepperInputProps) {
+  const [text, setText] = useState<string>(
+    value !== undefined && !isNaN(value) ? String(value) : String(defaultValue)
+  );
+
+  useEffect(() => {
+    if (value !== undefined && !isNaN(value) && String(value) !== text && text !== '') {
+      setText(String(value));
+    }
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    if (raw === '' || /^\d*\.?\d*$/.test(raw)) {
+      setText(raw);
+      if (raw !== '') {
+        const num = parseFloat(raw);
+        if (!isNaN(num)) {
+          onChange(num);
+        }
+      }
+    }
+  };
+
+  const handleBlur = () => {
+    if (text === '' || isNaN(parseFloat(text))) {
+      setText(String(defaultValue));
+      onChange(defaultValue);
+    } else {
+      let num = parseFloat(text);
+      if (min !== undefined && num < min) num = min;
+      if (max !== undefined && num > max) num = max;
+      setText(String(num));
+      onChange(num);
+    }
+  };
+
+  const increment = () => {
+    const current = text === '' || isNaN(parseFloat(text)) ? defaultValue : parseFloat(text);
+    const next = Math.min(max, Math.round((current + step) * 10) / 10);
+    setText(String(next));
+    onChange(next);
+  };
+
+  const decrement = () => {
+    const current = text === '' || isNaN(parseFloat(text)) ? defaultValue : parseFloat(text);
+    const next = Math.max(min, Math.round((current - step) * 10) / 10);
+    setText(String(next));
+    onChange(next);
+  };
+
+  return (
+    <div className="form-group">
+      <label className="form-label">{label}</label>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        background: 'var(--bg-card)',
+        border: '1px solid var(--border-medium)',
+        borderRadius: 'var(--radius-md)',
+        padding: '3px',
+        position: 'relative',
+        transition: 'all 0.2s',
+      }}>
+        <button
+          type="button"
+          onClick={decrement}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          title="Diminuir"
+        >
+          <Minus size={16} />
+        </button>
+
+        <input
+          className="form-input"
+          type="text"
+          inputMode="decimal"
+          value={text}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          style={{
+            border: 'none',
+            background: 'transparent',
+            textAlign: 'center',
+            fontSize: 17,
+            fontWeight: 700,
+            fontFamily: 'var(--font-ui)',
+            color: 'var(--text-primary)',
+            padding: '6px 4px',
+            boxShadow: 'none',
+            flex: 1,
+            minWidth: 0,
+          }}
+        />
+
+        <button
+          type="button"
+          onClick={increment}
+          style={{
+            width: 40,
+            height: 40,
+            borderRadius: 'var(--radius-sm)',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            transition: 'all 0.2s',
+          }}
+          title="Aumentar"
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Step Components ───────────────────────────────────────────────────────
 
 function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
@@ -263,16 +416,16 @@ function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k:
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="animate-fade-in">
-        <div className="form-group">
-          <label className="form-label">Idade</label>
-          <input
-            className="form-input"
-            type="number"
-            min={14} max={80}
-            value={profile.age || 25}
-            onChange={e => update('age', parseInt(e.target.value))}
-          />
-        </div>
+        <NumericStepperInput
+          label="Idade"
+          value={profile.age}
+          defaultValue={25}
+          min={14}
+          max={80}
+          step={1}
+          onChange={val => update('age', val)}
+        />
+
         <div className="form-group">
           <label className="form-label">Sexo biológico</label>
           <div style={{ display: 'flex', gap: 6, height: 48 }}>
@@ -308,26 +461,25 @@ function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k:
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="animate-fade-in">
-        <div className="form-group">
-          <label className="form-label">Peso (kg)</label>
-          <input
-            className="form-input"
-            type="number"
-            min={40} max={200}
-            value={profile.weight || 75}
-            onChange={e => update('weight', parseFloat(e.target.value))}
-          />
-        </div>
-        <div className="form-group">
-          <label className="form-label">Altura (cm)</label>
-          <input
-            className="form-input"
-            type="number"
-            min={140} max={230}
-            value={profile.height || 175}
-            onChange={e => update('height', parseInt(e.target.value))}
-          />
-        </div>
+        <NumericStepperInput
+          label="Peso (kg)"
+          value={profile.weight}
+          defaultValue={75}
+          min={40}
+          max={200}
+          step={0.5}
+          onChange={val => update('weight', val)}
+        />
+
+        <NumericStepperInput
+          label="Altura (cm)"
+          value={profile.height}
+          defaultValue={175}
+          min={140}
+          max={230}
+          step={1}
+          onChange={val => update('height', val)}
+        />
       </div>
 
       {/* BMI preview */}

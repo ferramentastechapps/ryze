@@ -323,6 +323,15 @@ img {
   background: var(--bg-elevated);
 }
 
+/* Number input spinners high contrast */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  opacity: 1 !important;
+  filter: invert(0.85);
+  cursor: pointer;
+  height: 20px;
+}
+
 select.form-input option {
   background-color: #12121E !important;
   color: #F0F2F5 !important;
