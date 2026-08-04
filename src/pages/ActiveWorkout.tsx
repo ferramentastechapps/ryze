@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, Clock, Trophy, X, Plus, Minus, Info, Activity } from 'lucide-react';
+import { Check, ChevronLeft, Clock, Trophy, X, Plus, Minus, Info, Activity, Flame, Heart, Wind, Zap, Lightbulb } from 'lucide-react';
 import type { AppState, StrengthWorkout, RunWorkout, Exercise, LoggedSet } from '../types';
 import { logWorkout } from '../store/appStore';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
@@ -306,7 +306,16 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
               marginBottom: 20,
               textAlign: 'center',
             }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>🏃</div>
+              <div style={{
+                width: 56, height: 56,
+                borderRadius: 16,
+                background: 'rgba(0,212,255,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--accent-cyan)',
+                margin: '0 auto 16px',
+              }}>
+                <Activity size={28} />
+              </div>
               <div style={{ fontFamily: 'var(--font-display)', fontSize: 64, color: 'var(--accent-cyan)', lineHeight: 1 }}>
                 {runWorkout.distance}
               </div>
@@ -327,15 +336,21 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
 
             {/* Run details cards */}
             {[
-              { label: '🔥 Aquecimento', content: runWorkout.warmup },
-              { label: '❤️ Zona de FC', content: runWorkout.heartRateZone },
-              { label: '❄️ Desaquecimento', content: runWorkout.cooldown },
-            ].filter(c => c.content).map(card => (
-              <div key={card.label} className="glass-card" style={{ padding: 16, marginBottom: 12 }}>
-                <div style={{ fontWeight: 700, fontFamily: 'var(--font-ui)', fontSize: 14, marginBottom: 6 }}>{card.label}</div>
-                <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{card.content}</div>
-              </div>
-            ))}
+              { label: 'Aquecimento', content: runWorkout.warmup, icon: Flame, color: 'var(--accent-orange)' },
+              { label: 'Zona de FC', content: runWorkout.heartRateZone, icon: Heart, color: 'var(--accent-orange)' },
+              { label: 'Desaquecimento', content: runWorkout.cooldown, icon: Wind, color: 'var(--accent-cyan)' },
+            ].filter(c => c.content).map(card => {
+              const Icon = card.icon;
+              return (
+                <div key={card.label} className="glass-card" style={{ padding: 16, marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontFamily: 'var(--font-ui)', fontSize: 14, marginBottom: 6 }}>
+                    <Icon size={16} style={{ color: card.color }} />
+                    {card.label}
+                  </div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: 14 }}>{card.content}</div>
+                </div>
+              );
+            })}
 
             {/* Intervals */}
             {runWorkout.intervals && (
@@ -499,7 +514,7 @@ function ExerciseCard({
           lineHeight: 1.5,
           display: 'flex', alignItems: 'flex-start', gap: 6,
         }}>
-          <span style={{ color: accentColor, flexShrink: 0 }}>💡</span>
+          <Lightbulb size={14} style={{ color: accentColor, flexShrink: 0, marginTop: 2 }} />
           {exercise.technique}
         </div>
       )}
@@ -537,11 +552,16 @@ function FinishedScreen({
     }}>
       {/* Trophy animation */}
       <div style={{
-        fontSize: 80,
+        width: 80, height: 80,
+        borderRadius: 24,
+        background: 'var(--accent-lime-dim)',
+        border: '1px solid var(--accent-lime)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--accent-lime)',
         marginBottom: 24,
         animation: 'float 3s ease-in-out infinite',
       }}>
-        🏆
+        <Trophy size={44} />
       </div>
 
       <h2 style={{

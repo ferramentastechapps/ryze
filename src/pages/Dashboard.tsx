@@ -103,7 +103,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           {/* Greeting */}
           <div className="animate-fade-in" style={{ paddingTop: 24, paddingBottom: 32 }}>
             <div style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', marginBottom: 4 }}>
-              {greeting()}, {profile?.name || 'atleta'} 👋
+              {greeting()}, {profile?.name || 'atleta'}
             </div>
             <h1 style={{
               fontFamily: 'var(--font-display)',
@@ -499,20 +499,32 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               {[
-                { label: 'Treinos', value: stats.totalWorkouts, icon: '🏆', color: 'var(--accent-lime)' },
-                { label: 'Km rodados', value: `${stats.totalKm.toFixed(0)}`, icon: '🏃', color: 'var(--accent-cyan)' },
-                { label: 'Vol. total', value: `${(stats.totalVolume / 1000).toFixed(1)}k`, icon: '💪', color: 'var(--accent-orange)' },
-              ].map(stat => (
-                <div key={stat.label} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{stat.icon}</div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: stat.color, lineHeight: 1 }}>
-                    {stat.value}
+                { label: 'Treinos', value: stats.totalWorkouts, icon: Trophy, color: 'var(--accent-lime)' },
+                { label: 'Km rodados', value: `${stats.totalKm.toFixed(0)}`, icon: Activity, color: 'var(--accent-cyan)' },
+                { label: 'Vol. total', value: `${(stats.totalVolume / 1000).toFixed(1)}k`, icon: Dumbbell, color: 'var(--accent-orange)' },
+              ].map(stat => {
+                const Icon = stat.icon;
+                return (
+                  <div key={stat.label} style={{ textAlign: 'center' }}>
+                    <div style={{
+                      width: 36, height: 36,
+                      borderRadius: 10,
+                      background: stat.color + '22',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: stat.color,
+                      margin: '0 auto 8px',
+                    }}>
+                      <Icon size={18} />
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, color: stat.color, lineHeight: 1 }}>
+                      {stat.value}
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'var(--font-ui)', fontWeight: 600, letterSpacing: '0.04em' }}>
+                      {stat.label}
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'var(--font-ui)', fontWeight: 600, letterSpacing: '0.04em' }}>
-                    {stat.label}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

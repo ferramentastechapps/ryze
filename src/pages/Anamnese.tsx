@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles, BarChart3, Sprout, Flame, Award, Home, Building2, Sunrise, Sun, Moon, Lightbulb, Timer, ShieldAlert } from 'lucide-react';
 import { saveProfileWithPlan } from '../store/appStore';
 import { analyzeProfile } from '../engine/aiEngine';
 import { generateAICoaching, saveAICoach, type AICoachResponse } from '../services/geminiService';
@@ -67,7 +67,6 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
     } as UserProfile;
 
     try {
-      // Chama Gemini 2.5 Flash via OpenRouter
       const { weekPlan, aiCoach: coach } = await generateAICoaching(fullProfile);
       saveProfileWithPlan(fullProfile, weekPlan);
       if (coach) {
@@ -79,7 +78,6 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
     } catch (err) {
       console.error('AI generation failed:', err);
       setAiError(true);
-      // fallback: rule-based already generated in saveProfileWithPlan above
     }
 
     onComplete();
@@ -225,10 +223,348 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
             style={{ width: '100%', fontSize: 16, padding: '16px' }}
             onClick={next}
           >
-            {step === TOTAL_STEPS ? 'Gerar meu plano 🔥' : 'Continuar'}
+            {step === TOTAL_STEPS ? 'Gerar meu plano' : 'Continuar'}
             {step < TOTAL_STEPS && <ChevronRight size={18} />}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step Components ───────────────────────────────────────────────────────
+
+function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
+  return (
+    <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+      <div className="animate-fade-in">
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 40, letterSpacing: '0.04em', color: 'var(--text-primary)', marginBottom: 8 }}>
+          SEU PERFIL
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+          Vamos começar com o básico. Esses dados são usados para personalizar sua programação.
+        </p>
+      </div>
+
+      <div className="animate-fade-in form-group">
+        <label className="form-label">Seu nome</label>
+        <input
+          className="form-input"
+          type="text"
+          placeholder="Ex: Lucas Silva"
+          value={profile.name || ''}
+          onChange={e => update('name', e.target.value)}
+        />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="animate-fade-in">
+        <div className="form-group">
+          <label className="form-label">Idade</label>
+          <input
+            className="form-input"
+            type="number"
+            min={14} max={80}
+            value={profile.age || 25}
+            onChange={e => update('age', parseInt(e.target.value))}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Sexo biológico</label>
+          <select
+            className="form-input"
+            value={profile.sex || 'masculino'}
+            onChange={e => update('sex', e.target.value as Sex)}
+          >
+            <option value="masculino">Masculino</option>
+            <option value="feminino">Feminino</option>
+          </select>
+        </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }} className="animate-fade-in">
+        <div className="form-group">
+          <label className="form-label">Peso (kg)</label>
+          <input
+            className="form-input"
+            type="number"
+            min={40} max={200}
+            value={profile.weight || 75}
+            onChange={e => update('weight', parseFloat(e.target.value))}
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Altura (cm)</label>
+          <input
+            className="form-input"
+            type="number"
+            min={140} max={230}
+            value={profile.height || 175}
+            onChange={e => update('height', parseInt(e.target.value))}
+          />
+        </div>
+      </div>
+
+      {/* BMI preview */}
+      {profile.weight && profile.height && (
+        <div className="animate-fade-in glass-card" style={{ padding: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 44, height: 44,
+            background: 'var(--accent-lime-dim)',
+            borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--accent-lime)',
+          }}>
+            <BarChart3 size={20} />
+          </div>
+          <div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent-lime)', lineHeight: 1 }}>
+              {(profile.weight / Math.pow(profile.height / 100, 2)).toFixed(1)}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+              IMC calculado
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Step2({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
+  const levels = [
+    { value: 'iniciante', label: 'Iniciante', desc: 'Menos de 1 ano de treino consistente', icon: Sprout, color: 'var(--accent-lime)' },
+    { value: 'intermediario', label: 'Intermediário', desc: '1-3 anos de treino com consistência', icon: Zap, color: 'var(--accent-cyan)' },
+    { value: 'avancado', label: 'Avançado', desc: 'Mais de 3 anos, periodização conhecida', icon: Flame, color: 'var(--accent-orange)' },
+  ];
+
+  const injuryOptions = ['Joelho', 'Ombro', 'Lombar', 'Quadril', 'Tornozelo', 'Cervical', 'Cotovelo'];
+
+  const toggleInjury = (injury: string) => {
+    const current = profile.injuries || [];
+    const updated = current.includes(injury)
+      ? current.filter(i => i !== injury)
+      : [...current, injury];
+    update('injuries', updated);
+  };
+
+  return (
+    <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="animate-fade-in">
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 40, letterSpacing: '0.04em', color: 'var(--text-primary)', marginBottom: 8 }}>
+          EXPERIÊNCIA
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+          Seu nível define a carga, volume e complexidade dos treinos gerados.
+        </p>
+      </div>
+
+      <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <label className="form-label">Nível de treino</label>
+        {levels.map(level => {
+          const Icon = level.icon;
+          const isSelected = profile.experienceLevel === level.value;
+          return (
+            <button
+              key={level.value}
+              onClick={() => update('experienceLevel', level.value)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '16px 20px',
+                borderRadius: 'var(--radius-lg)',
+                border: `2px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
+                background: isSelected ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+                width: '100%',
+              }}
+            >
+              <div style={{
+                width: 40, height: 40,
+                borderRadius: 12,
+                background: level.color + '22',
+                border: `1px solid ${level.color}44`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: level.color,
+                flexShrink: 0,
+              }}>
+                <Icon size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>{level.label}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>{level.desc}</div>
+              </div>
+              {isSelected && (
+                <Check size={18} style={{ color: 'var(--accent-lime)', marginLeft: 'auto', flexShrink: 0 }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="animate-fade-in">
+        <label className="form-label" style={{ display: 'block', marginBottom: 12 }}>
+          Lesões ou restrições (opcional)
+        </label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {injuryOptions.map(injury => {
+            const selected = (profile.injuries || []).includes(injury);
+            return (
+              <button
+                key={injury}
+                onClick={() => toggleInjury(injury)}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: 'var(--radius-full)',
+                  border: `1px solid ${selected ? 'var(--accent-orange)' : 'var(--border-medium)'}`,
+                  background: selected ? 'var(--accent-orange-dim)' : 'var(--bg-card)',
+                  color: selected ? 'var(--accent-orange)' : 'var(--text-secondary)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontFamily: 'var(--font-ui)',
+                }}
+              >
+                {selected && '✓ '}{injury}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="animate-fade-in">
+        <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>Acesso à academia?</label>
+        <div style={{ display: 'flex', gap: 10 }}>
+          {[
+            { v: true, label: 'Academia completa', icon: Building2 },
+            { v: false, label: 'Treino em casa', icon: Home },
+          ].map(opt => {
+            const Icon = opt.icon;
+            const isSelected = profile.hasGymAccess === opt.v;
+            return (
+              <button
+                key={String(opt.v)}
+                onClick={() => update('hasGymAccess', opt.v)}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
+                  background: isSelected ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontFamily: 'var(--font-ui)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Icon size={16} style={{ color: isSelected ? 'var(--accent-lime)' : 'var(--text-muted)' }} />
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Step3({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
+  const goals = [
+    { value: 'hipertrofia', label: 'Hipertrofia Máxima', desc: 'Foco em massa muscular e estética', color: 'var(--accent-orange)', icon: Dumbbell },
+    { value: 'perda_gordura', label: 'Perda de Gordura', desc: 'Definição e redução do % de gordura', color: 'var(--accent-cyan)', icon: Flame },
+    { value: 'performance', label: 'Performance Híbrida', desc: 'Força + condicionamento avançado', color: 'var(--accent-purple)', icon: Zap },
+    { value: 'equilibrio', label: 'Equilíbrio Estético', desc: 'Corpo bonito, saúde e bem-estar', color: 'var(--accent-lime)', icon: Award },
+  ];
+
+  return (
+    <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+      <div className="animate-fade-in">
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 40, letterSpacing: '0.04em', color: 'var(--text-primary)', marginBottom: 8 }}>
+          OBJETIVO
+        </h2>
+        <p style={{ color: 'var(--text-secondary)', fontSize: 15 }}>
+          Seu objetivo principal define toda a estrutura de periodização do treino.
+        </p>
+      </div>
+
+      <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        {goals.map(goal => {
+          const selected = profile.primaryGoal === goal.value;
+          const Icon = goal.icon;
+          return (
+            <button
+              key={goal.value}
+              onClick={() => update('primaryGoal', goal.value)}
+              style={{
+                padding: '20px 16px',
+                borderRadius: 'var(--radius-lg)',
+                border: `2px solid ${selected ? goal.color : 'var(--border-subtle)'}`,
+                background: selected ? `${goal.color}15` : 'var(--bg-card)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <div style={{
+                width: 40, height: 40,
+                borderRadius: 10,
+                background: goal.color + '22',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: goal.color,
+                marginBottom: 12,
+              }}>
+                <Icon size={20} />
+              </div>
+              <div style={{
+                fontWeight: 700,
+                fontSize: 14,
+                color: selected ? goal.color : 'var(--text-primary)',
+                fontFamily: 'var(--font-ui)',
+                marginBottom: 6,
+              }}>
+                {goal.label}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                {goal.desc}
+              </div>
+              {selected && (
+                <div style={{
+                  position: 'absolute',
+                  top: 12, right: 12,
+                  width: 20, height: 20,
+                  borderRadius: '50%',
+                  background: goal.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <Check size={12} color="#08080E" strokeWidth={3} />
+                </div>
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="animate-fade-in form-group">
+        <label className="form-label">Descreva o corpo que você quer atingir</label>
+        <textarea
+          className="form-input"
+          placeholder="Ex: Quero definir o abdômen, ganhar volume nos ombros e melhorar meu condicionamento para correr 5km com facilidade..."
+          value={profile.estheticGoal || ''}
+          onChange={e => update('estheticGoal', e.target.value)}
+          rows={3}
+          style={{ resize: 'none' }}
+        />
       </div>
     </div>
   );
@@ -614,30 +950,39 @@ function Step4({ profile, update }: { profile: Partial<UserProfile>; update: (k:
         <label className="form-label" style={{ display: 'block', marginBottom: 12 }}>Período preferido</label>
         <div style={{ display: 'flex', gap: 10 }}>
           {[
-            { v: 'manha', label: '🌅 Manhã' },
-            { v: 'tarde', label: '☀️ Tarde' },
-            { v: 'noite', label: '🌙 Noite' },
-          ].map(opt => (
-            <button
-              key={opt.v}
-              onClick={() => update('preferredTime', opt.v)}
-              style={{
-                flex: 1,
-                padding: '14px 8px',
-                borderRadius: 'var(--radius-md)',
-                border: `2px solid ${profile.preferredTime === opt.v ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
-                background: profile.preferredTime === opt.v ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
-                color: profile.preferredTime === opt.v ? 'var(--accent-lime)' : 'var(--text-secondary)',
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: 'var(--font-ui)',
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
+            { v: 'manha', label: 'Manhã', icon: Sunrise },
+            { v: 'tarde', label: 'Tarde', icon: Sun },
+            { v: 'noite', label: 'Noite', icon: Moon },
+          ].map(opt => {
+            const Icon = opt.icon;
+            const isSelected = profile.preferredTime === opt.v;
+            return (
+              <button
+                key={opt.v}
+                onClick={() => update('preferredTime', opt.v)}
+                style={{
+                  flex: 1,
+                  padding: '14px 8px',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
+                  background: isSelected ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+                  color: isSelected ? 'var(--accent-lime)' : 'var(--text-secondary)',
+                  fontWeight: 600,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontFamily: 'var(--font-ui)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Icon size={16} />
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -645,11 +990,11 @@ function Step4({ profile, update }: { profile: Partial<UserProfile>; update: (k:
 }
 
 function Step5({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
-  const runLevels: Array<{ value: RunnerLevel; label: string; desc: string; emoji: string }> = [
-    { value: 'nenhum', label: 'Não corro', desc: 'Foco total em musculação', emoji: '🏋️' },
-    { value: 'iniciante', label: 'Iniciante', desc: 'Corridas curtas, ritmo confortável', emoji: '🚶' },
-    { value: 'intermediario', label: 'Intermediário', desc: '5-15km por semana com regularidade', emoji: '🏃' },
-    { value: 'avancado', label: 'Avançado', desc: '15km+ por semana, faz provas', emoji: '⚡' },
+  const runLevels = [
+    { value: 'nenhum', label: 'Não corro', desc: 'Foco total em musculação', icon: Dumbbell, color: 'var(--accent-orange)' },
+    { value: 'iniciante', label: 'Iniciante', desc: 'Corridas curtas, ritmo confortável', icon: Activity, color: 'var(--accent-lime)' },
+    { value: 'intermediario', label: 'Intermediário', desc: '5-15km por semana com regularidade', icon: Flame, color: 'var(--accent-cyan)' },
+    { value: 'avancado', label: 'Avançado', desc: '15km+ por semana, faz provas', icon: Zap, color: 'var(--accent-purple)' },
   ];
 
   return (
@@ -665,39 +1010,53 @@ function Step5({ profile, update }: { profile: Partial<UserProfile>; update: (k:
 
       <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <label className="form-label">Seu nível como corredor</label>
-        {runLevels.map(level => (
-          <button
-            key={level.value}
-            onClick={() => update('runnerLevel', level.value)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '14px 18px',
-              borderRadius: 'var(--radius-lg)',
-              border: `2px solid ${profile.runnerLevel === level.value ? 'var(--accent-cyan)' : 'var(--border-subtle)'}`,
-              background: profile.runnerLevel === level.value ? 'var(--accent-cyan-dim)' : 'var(--bg-card)',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.2s',
-              width: '100%',
-            }}
-          >
-            <span style={{ fontSize: 22 }}>{level.emoji}</span>
-            <div>
+        {runLevels.map(level => {
+          const Icon = level.icon;
+          const isSelected = profile.runnerLevel === level.value;
+          return (
+            <button
+              key={level.value}
+              onClick={() => update('runnerLevel', level.value)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '14px 18px',
+                borderRadius: 'var(--radius-lg)',
+                border: `2px solid ${isSelected ? 'var(--accent-cyan)' : 'var(--border-subtle)'}`,
+                background: isSelected ? 'var(--accent-cyan-dim)' : 'var(--bg-card)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+                width: '100%',
+              }}
+            >
               <div style={{
-                fontWeight: 700,
-                color: profile.runnerLevel === level.value ? 'var(--accent-cyan)' : 'var(--text-primary)',
-                fontFamily: 'var(--font-ui)',
-                fontSize: 14,
-              }}>{level.label}</div>
-              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{level.desc}</div>
-            </div>
-            {profile.runnerLevel === level.value && (
-              <Check size={16} style={{ color: 'var(--accent-cyan)', marginLeft: 'auto', flexShrink: 0 }} />
-            )}
-          </button>
-        ))}
+                width: 36, height: 36,
+                borderRadius: 10,
+                background: level.color + '22',
+                border: `1px solid ${level.color}44`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: level.color,
+                flexShrink: 0,
+              }}>
+                <Icon size={18} />
+              </div>
+              <div>
+                <div style={{
+                  fontWeight: 700,
+                  color: isSelected ? 'var(--accent-cyan)' : 'var(--text-primary)',
+                  fontFamily: 'var(--font-ui)',
+                  fontSize: 14,
+                }}>{level.label}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>{level.desc}</div>
+              </div>
+              {isSelected && (
+                <Check size={16} style={{ color: 'var(--accent-cyan)', marginLeft: 'auto', flexShrink: 0 }} />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {profile.runnerLevel !== 'nenhum' && (
@@ -868,7 +1227,16 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
         {/* Header */}
         <div className="animate-fade-in" style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>🎯</div>
+          <div style={{
+            width: 64, height: 64,
+            borderRadius: 20,
+            background: 'var(--gradient-lime)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 20px',
+            boxShadow: 'var(--shadow-glow-lime)',
+          }}>
+            <Target size={32} color="#08080E" strokeWidth={2.5} />
+          </div>
           <h2 style={{
             fontFamily: 'var(--font-display)',
             fontSize: 48,
@@ -984,17 +1352,25 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
           {/* Goal */}
           <div className="glass-card animate-fade-in" style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-              <span style={{ fontSize: 20 }}>🎯</span>
+              <div style={{
+                width: 32, height: 32,
+                borderRadius: 8,
+                background: 'var(--accent-lime-dim)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--accent-lime)',
+              }}>
+                <Target size={18} />
+              </div>
               <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15 }}>Objetivo Principal</div>
             </div>
             <div className="badge badge-lime">{goalLabels[profile.primaryGoal]}</div>
           </div>
 
-
           {/* Weekly load */}
           <div className="glass-card animate-fade-in" style={{ padding: 20 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
-              📅 Carga Semanal
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+              <Calendar size={18} style={{ color: 'var(--accent-lime)' }} />
+              Carga Semanal
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               {[
@@ -1025,8 +1401,9 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
 
           {/* Recommendations */}
           <div className="glass-card animate-fade-in" style={{ padding: 20 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
-              💡 Recomendações da IA
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+              <Lightbulb size={18} style={{ color: 'var(--accent-lime)' }} />
+              Recomendações da IA
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {analysis.recommendations.slice(0, 3).map((rec, i) => (
@@ -1050,7 +1427,16 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
             borderColor: 'var(--border-accent)',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 24 }}>⏱️</span>
+              <div style={{
+                width: 40, height: 40,
+                borderRadius: 10,
+                background: 'rgba(200,255,0,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--accent-lime)',
+                flexShrink: 0,
+              }}>
+                <Timer size={20} />
+              </div>
               <div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 14, color: 'var(--accent-lime)' }}>
                   Previsão de resultados

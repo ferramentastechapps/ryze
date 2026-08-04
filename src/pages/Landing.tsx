@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef } from 'react';
-import { Dumbbell, Zap, Activity, ArrowRight, ChevronRight } from 'lucide-react';
+import { Dumbbell, Zap, Activity, ArrowRight, ChevronRight, Brain, Calendar, TrendingUp, ShieldCheck, CheckCircle2, Lock, Atom } from 'lucide-react';
 
 interface LandingProps {
   isOnboarded: boolean;
@@ -259,20 +259,23 @@ export default function Landing({ isOnboarded }: LandingProps) {
             }}
           >
             {[
-              { label: 'Baseado em ciência', icon: '🧬' },
-              { label: '100% gratuito', icon: '✅' },
-              { label: 'Sem API externa', icon: '🔒' },
-            ].map(item => (
-              <div key={item.label} style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                color: 'var(--text-muted)',
-                fontSize: 13,
-                fontWeight: 500,
-              }}>
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-            ))}
+              { label: 'Baseado em ciência', icon: Atom },
+              { label: '100% confiável', icon: CheckCircle2 },
+              { label: 'Privacidade garantida', icon: Lock },
+            ].map(item => {
+              const Icon = item.icon;
+              return (
+                <div key={item.label} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  color: 'var(--text-muted)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}>
+                  <Icon size={14} style={{ color: 'var(--accent-lime)' }} />
+                  <span>{item.label}</span>
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -298,41 +301,44 @@ export default function Landing({ isOnboarded }: LandingProps) {
             gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
             gap: 20,
           }}>
-            {FEATURES.map((feature, i) => (
-              <div
-                key={feature.title}
-                className="glass-card animate-fade-in"
-                style={{
-                  padding: 28,
-                  animationDelay: `${i * 80}ms`,
-                  cursor: 'default',
-                }}
-              >
-                <div style={{
-                  width: 52, height: 52,
-                  background: feature.color + '22',
-                  border: `1px solid ${feature.color}33`,
-                  borderRadius: 14,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: 20,
-                  fontSize: 24,
-                }}>
-                  {feature.emoji}
+            {FEATURES.map((feature, i) => {
+              const Icon = feature.icon;
+              return (
+                <div
+                  key={feature.title}
+                  className="glass-card animate-fade-in"
+                  style={{
+                    padding: 28,
+                    animationDelay: `${i * 80}ms`,
+                    cursor: 'default',
+                  }}
+                >
+                  <div style={{
+                    width: 52, height: 52,
+                    background: feature.color + '22',
+                    border: `1px solid ${feature.color}33`,
+                    borderRadius: 14,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    marginBottom: 20,
+                    color: feature.color,
+                  }}>
+                    <Icon size={24} />
+                  </div>
+                  <h3 style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontWeight: 700,
+                    fontSize: 17,
+                    color: 'var(--text-primary)',
+                    marginBottom: 8,
+                  }}>
+                    {feature.title}
+                  </h3>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
+                    {feature.description}
+                  </p>
                 </div>
-                <h3 style={{
-                  fontFamily: 'var(--font-ui)',
-                  fontWeight: 700,
-                  fontSize: 17,
-                  color: 'var(--text-primary)',
-                  marginBottom: 8,
-                }}>
-                  {feature.title}
-                </h3>
-                <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>
-                  {feature.description}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
@@ -416,39 +422,39 @@ export default function Landing({ isOnboarded }: LandingProps) {
 
 const FEATURES = [
   {
-    emoji: '🧠',
+    icon: Brain,
     title: 'Anamnese Inteligente',
     description: 'Análise completa do seu perfil: histórico, limitações, objetivos e nível atual. A IA entende quem você é.',
     color: '#9B59FF',
   },
   {
-    emoji: '📅',
+    icon: Calendar,
     title: 'Plano Semanal Personalizado',
     description: 'Semana estruturada com musculação e corrida sequenciados para evitar interferência e maximizar resultados.',
     color: '#C8FF00',
   },
   {
-    emoji: '💪',
+    icon: Dumbbell,
     title: 'Periodização Científica',
     description: 'Sistema High-Low com progressão de carga automática. Cada treino tem propósito e progressão.',
     color: '#FF5F1F',
   },
   {
-    emoji: '🏃',
+    icon: Activity,
     title: 'Corrida Integrada',
     description: 'Treinos de corrida (leve, intervalado, longão) planejados em harmonia com a musculação.',
     color: '#00D4FF',
   },
   {
-    emoji: '📊',
+    icon: TrendingUp,
     title: 'Tracking de Progresso',
     description: 'Registre seus treinos, acompanhe volume, km rodados e evolução semana a semana.',
     color: '#C8FF00',
   },
   {
-    emoji: '⚡',
-    title: '100% Offline',
-    description: 'Nenhuma API externa. Tudo roda no seu dispositivo com total privacidade e velocidade.',
+    icon: Zap,
+    title: 'IA com Gemini 2.5 Flash',
+    description: 'Integração direta com a IA avançada do Google para orientações e análises técnicas completas.',
     color: '#FF5F1F',
   },
 ];

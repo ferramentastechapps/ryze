@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info } from 'lucide-react';
+import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info, Trophy, Lightbulb, Moon } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, CartesianGrid, RadialBarChart, RadialBar, Legend,
@@ -94,24 +94,52 @@ export default function Progress({ state }: ProgressProps) {
             background: 'linear-gradient(135deg, rgba(200,255,0,0.08) 0%, rgba(200,255,0,0.03) 100%)',
             borderColor: 'rgba(200,255,0,0.15)',
           }}>
-            <div style={{ fontSize: 20, marginBottom: 8 }}>🔥</div>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--accent-lime-dim)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--accent-lime)', marginBottom: 8,
+            }}>
+              <Flame size={20} />
+            </div>
             <div className="metric-value" style={{ color: 'var(--accent-lime)' }}>{stats.currentStreak}</div>
             <div className="metric-label">Dias de streak</div>
           </div>
           <div className="metric-card animate-fade-in">
-            <div style={{ fontSize: 20, marginBottom: 8 }}>🏆</div>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--bg-elevated)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text-primary)', marginBottom: 8,
+            }}>
+              <Trophy size={20} />
+            </div>
             <div className="metric-value" style={{ color: 'var(--text-primary)' }}>{stats.totalWorkouts}</div>
             <div className="metric-label">Total de treinos</div>
           </div>
           <div className="metric-card animate-fade-in">
-            <div style={{ fontSize: 20, marginBottom: 8 }}>💪</div>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--accent-orange-dim)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--accent-orange)', marginBottom: 8,
+            }}>
+              <Dumbbell size={20} />
+            </div>
             <div className="metric-value" style={{ color: 'var(--accent-orange)', fontSize: 32 }}>
               {stats.totalVolume.toLocaleString('pt-BR')}
             </div>
             <div className="metric-label">Reps totais</div>
           </div>
           <div className="metric-card animate-fade-in">
-            <div style={{ fontSize: 20, marginBottom: 8 }}>🏃</div>
+            <div style={{
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--accent-cyan-dim)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--accent-cyan)', marginBottom: 8,
+            }}>
+              <Activity size={20} />
+            </div>
             <div className="metric-value" style={{ color: 'var(--accent-cyan)', fontSize: 32 }}>
               {stats.totalKm.toFixed(1)}km
             </div>
@@ -335,8 +363,9 @@ function StrengthTab({ logs }: { logs: WorkoutLog[] }) {
           </div>
 
           <div className="glass-card" style={{ padding: 20 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
-              💡 Dica de progresso
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+              <Lightbulb size={18} style={{ color: 'var(--accent-orange)' }} />
+              Dica de progresso
             </div>
             <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, padding: '12px 14px', background: 'var(--accent-orange-dim)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,95,31,0.2)' }}>
               Aumente a carga em 2.5-5kg quando conseguir completar todas as séries com facilidade. A progressão de carga é o principal driver da hipertrofia.
@@ -379,7 +408,10 @@ function RunningTab({ logs, totalKm }: { logs: WorkoutLog[]; totalKm: number }) 
           </div>
 
           <div className="glass-card" style={{ padding: 20 }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>💡 Dica de corrida</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
+              <Lightbulb size={18} style={{ color: 'var(--accent-cyan)' }} />
+              Dica de corrida
+            </div>
             <div style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, padding: '12px 14px', background: 'var(--accent-cyan-dim)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(0,212,255,0.2)' }}>
               80% das corridas deve ser em Zona 2 (você consegue conversar). Os 20% restantes são treinos intensos. Esta regra é usada por todos os corredores de elite.
             </div>
@@ -403,7 +435,7 @@ function HistoryTab({ workouts }: { workouts: WorkoutLog[] }) {
       {workouts.map((log, i) => {
         const color = log.workout.type === 'musculacao' ? 'var(--accent-orange)' :
           log.workout.type === 'corrida' ? 'var(--accent-cyan)' : 'var(--text-muted)';
-        const emoji = log.workout.type === 'musculacao' ? '💪' : log.workout.type === 'corrida' ? '🏃' : '😴';
+        const Icon = log.workout.type === 'musculacao' ? Dumbbell : log.workout.type === 'corrida' ? Activity : Moon;
         const date = new Date(log.date);
         const dateStr = date.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' });
 
@@ -414,10 +446,10 @@ function HistoryTab({ workouts }: { workouts: WorkoutLog[] }) {
               borderRadius: 12,
               background: color + '22',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18,
+              color,
               flexShrink: 0,
             }}>
-              {emoji}
+              <Icon size={18} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -425,11 +457,6 @@ function HistoryTab({ workouts }: { workouts: WorkoutLog[] }) {
               </div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{dateStr}</div>
             </div>
-            {log.duration && (
-              <div style={{ fontSize: 13, fontWeight: 700, color, fontFamily: 'var(--font-ui)', flexShrink: 0 }}>
-                {log.duration}min
-              </div>
-            )}
           </div>
         );
       })}
@@ -529,12 +556,10 @@ function LibraryTab({ onSelectExercise }: { onSelectExercise: (id: string, name:
                 background: color + '22',
                 border: `1px solid ${color}44`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontFamily: 'var(--font-display)',
-                fontSize: 18,
                 color,
                 flexShrink: 0,
               }}>
-                💪
+                <Dumbbell size={20} />
               </div>
 
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -580,7 +605,14 @@ function EmptyState({ message }: { message: string }) {
       border: '1px solid var(--border-subtle)',
       borderRadius: 'var(--radius-xl)',
     }}>
-      <div style={{ fontSize: 40, marginBottom: 16 }}>📊</div>
+      <div style={{
+        width: 48, height: 48, borderRadius: 16,
+        background: 'var(--bg-elevated)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        color: 'var(--text-muted)', margin: '0 auto 16px',
+      }}>
+        <BarChart2 size={24} />
+      </div>
       <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6 }}>{message}</p>
     </div>
   );

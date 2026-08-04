@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Activity, Zap, ChevronDown, ChevronUp, Play, RotateCcw, Clock, Info } from 'lucide-react';
+import { Dumbbell, Activity, Zap, ChevronDown, ChevronUp, Play, RotateCcw, Clock, Info, BookOpen, Brain, TrendingUp, Heart, Flame, Wind } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout, RestDay } from '../types';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
@@ -132,27 +132,41 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
 
         {/* Periodization info */}
         <div className="glass-card animate-fade-in" style={{ padding: 20, marginTop: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12 }}>
-            📚 PRINCÍPIOS DA SEMANA
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12 }}>
+            <BookOpen size={16} style={{ color: 'var(--accent-lime)' }} />
+            PRINCÍPIOS DA SEMANA
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {[
-              { icon: '⚡', text: 'Sistema High-Low: dias intensos alternados com leves para recuperação ótima' },
-              { icon: '🧠', text: 'Evitamos pernas pesadas antes de corrida intensa para minimizar interferência' },
-              { icon: '📈', text: 'Progressão de carga automática semana a semana para estimular hipertrofia' },
-              { icon: '🏃', text: 'Corrida Zona 2 nas folgas ajuda na recuperação e queima de gordura' },
-            ].map((item, i) => (
-              <div key={i} style={{
-                display: 'flex',
-                gap: 10,
-                padding: '10px 12px',
-                background: 'var(--bg-elevated)',
-                borderRadius: 'var(--radius-md)',
-              }}>
-                <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{item.icon}</span>
-                <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.text}</span>
-              </div>
-            ))}
+              { icon: Zap, text: 'Sistema High-Low: dias intensos alternados com leves para recuperação ótima', color: 'var(--accent-orange)' },
+              { icon: Brain, text: 'Evitamos pernas pesadas antes de corrida intensa para minimizar interferência', color: 'var(--accent-purple)' },
+              { icon: TrendingUp, text: 'Progressão de carga automática semana a semana para estimular hipertrofia', color: 'var(--accent-lime)' },
+              { icon: Activity, text: 'Corrida Zona 2 nas folgas ajuda na recuperação e queima de gordura', color: 'var(--accent-cyan)' },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div key={i} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '10px 12px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--radius-md)',
+                }}>
+                  <div style={{
+                    width: 28, height: 28,
+                    borderRadius: 8,
+                    background: item.color + '22',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: item.color,
+                    flexShrink: 0,
+                  }}>
+                    <Icon size={14} />
+                  </div>
+                  <span style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.text}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -410,20 +424,22 @@ function RunDetails({ workout }: { workout: RunWorkout }) {
           color: 'var(--text-secondary)',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <span style={{ color: 'var(--accent-orange)', fontSize: 16 }}>❤️</span>
+          <Heart size={16} style={{ color: 'var(--accent-orange)' }} />
           <strong style={{ color: 'var(--text-primary)' }}>Zona FC:</strong> {workout.heartRateZone}
         </div>
       )}
 
       {/* Warmup/cooldown */}
       {workout.warmup && (
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8 }}>
-          <strong style={{ color: 'var(--text-primary)' }}>🔥 Aquecimento:</strong> {workout.warmup}
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Flame size={14} style={{ color: 'var(--accent-orange)' }} />
+          <strong style={{ color: 'var(--text-primary)' }}>Aquecimento:</strong> {workout.warmup}
         </div>
       )}
       {workout.cooldown && (
-        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
-          <strong style={{ color: 'var(--text-primary)' }}>❄️ Desaquecimento:</strong> {workout.cooldown}
+        <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <Wind size={14} style={{ color: 'var(--accent-cyan)' }} />
+          <strong style={{ color: 'var(--text-primary)' }}>Desaquecimento:</strong> {workout.cooldown}
         </div>
       )}
 
