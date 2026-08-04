@@ -264,7 +264,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                   textTransform: 'uppercase',
                   marginBottom: 6,
                 }}>
-                  GEMINI — DICA DE HOJE
+                  COACH RYZE — DICA DE HOJE
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   {todayAiTip}

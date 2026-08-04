@@ -821,8 +821,8 @@ function LoadingAnalysis() {
     { text: 'Analisando seu perfil...', delay: 0 },
     { text: 'Calculando periodização com motor de regras...', delay: 600 },
     { text: 'Balanceando musculação e corrida...', delay: 1200 },
-    { text: 'Gemini 2.5 Flash personalizando seu plano...', delay: 1800 },
-    { text: 'Coach de IA elaborando suas recomendações...', delay: 2400 },
+    { text: 'Coach RYZE personalizando seu plano...', delay: 1800 },
+    { text: 'IA Híbrida de Elite elaborando suas recomendações...', delay: 2400 },
   ];
 
   return (
@@ -849,7 +849,7 @@ function LoadingAnalysis() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--text-secondary)' }}>
           <Sparkles size={14} style={{ color: 'var(--accent-lime)' }} />
-          <span>Gemini 2.5 Flash analisando seu perfil</span>
+          <span>Coach RYZE analisando seu perfil</span>
         </div>
       </div>
 
@@ -995,10 +995,10 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
                 </div>
                 <div>
                   <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 14, color: 'var(--text-primary)' }}>
-                    Seu Coach — Gemini 2.5 Flash
+                    Seu Personal Híbrido — Coach RYZE
                   </div>
                   <div style={{ fontSize: 11, color: 'var(--accent-purple)', fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
-                    via OpenRouter
+                    Inteligência de Elite
                   </div>
                 </div>
               </div>

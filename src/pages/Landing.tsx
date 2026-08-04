@@ -453,8 +453,8 @@ const FEATURES = [
   },
   {
     icon: Zap,
-    title: 'IA com Gemini 2.5 Flash',
-    description: 'Integração direta com a IA avançada do Google para orientações e análises técnicas completas.',
+    title: 'Personal IA — Coach RYZE',
+    description: 'Análises biomecânicas e orientações personalizadas como um Personal Trainer de elite.',
     color: '#FF5F1F',
   },
 ];
