@@ -265,35 +265,46 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
               }}>
                 <Sparkles size={16} color="var(--accent-purple)" />
               </div>
-              <div style={{ flex: 1 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: 6,
+                  gap: 8,
+                  marginBottom: 8,
+                  flexWrap: 'wrap',
                 }}>
+                  <div style={{
+                    fontSize: 10,
+                    fontWeight: 800,
+                    color: 'var(--accent-purple)',
+                    fontFamily: 'var(--font-ui)',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                  }}>
+                    COACH RYZE <span style={{ opacity: 0.4 }}>•</span> DICA DE HOJE
+                  </div>
+
                   <span style={{
                     fontSize: 10,
                     fontWeight: 700,
-                    color: 'var(--accent-purple)',
-                    fontFamily: 'var(--font-ui)',
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                  }}>
-                    COACH RYZE — DICA DE HOJE
-                  </span>
-                  <span style={{
-                    fontSize: 11,
-                    fontWeight: 700,
                     color: 'var(--accent-lime)',
-                    display: 'flex',
+                    background: 'rgba(200,255,0,0.1)',
+                    border: '1px solid rgba(200,255,0,0.25)',
+                    padding: '3px 9px',
+                    borderRadius: 999,
+                    display: 'inline-flex',
                     alignItems: 'center',
                     gap: 4,
+                    whiteSpace: 'nowrap',
                   }}>
-                    <Sparkles size={11} color="var(--accent-lime)" /> Ver Análise em Detalhes →
+                    <Sparkles size={10} color="var(--accent-lime)" /> Ver Análise →
                   </span>
                 </div>
-                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0 }}>
                   {todayAiTip}
                 </p>
               </div>
