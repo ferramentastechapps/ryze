@@ -31,7 +31,6 @@ export default function Navigation() {
                 <Icon size={19} strokeWidth={isActive ? 2.3 : 1.7} />
               </div>
               <span className="nav-dock-label">{label}</span>
-              {isActive && <div className="nav-active-dot" />}
             </NavLink>
           );
         })}

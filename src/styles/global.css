@@ -532,13 +532,24 @@ select.form-input {
   align-items: center;
   justify-content: center;
   padding: 8px 10px;
-  border-radius: 9999px;
+  border-radius: 9999px !important;
+  border: 1px solid transparent;
   color: var(--text-muted);
   text-decoration: none;
   position: relative;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
   user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none !important;
+}
+
+.nav-dock-item:focus,
+.nav-dock-item:focus-visible,
+.nav-dock-item:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 9999px !important;
 }
 
 .nav-dock-item:hover {
@@ -573,16 +584,6 @@ select.form-input {
   font-family: var(--font-ui);
   margin-top: 3px;
   transition: color 0.2s;
-}
-
-.nav-active-dot {
-  position: absolute;
-  bottom: 2px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--accent-lime);
-  box-shadow: 0 0 8px var(--accent-lime);
 }
 
 /* ─── Page Layout ─────────────────────────────────────────────── */
