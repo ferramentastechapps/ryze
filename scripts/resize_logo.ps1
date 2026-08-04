@@ -19,11 +19,18 @@ function Resize-Image($srcPath, $destPath, $width, $height) {
     $srcImg.Dispose()
 }
 
-$logoPath = "c:\Users\jotas\ryze\public\Logo.png"
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$publicDir = Join-Path $scriptDir "..\public"
 
-Resize-Image $logoPath "c:\Users\jotas\ryze\public\icon-512.png" 512 512
-Resize-Image $logoPath "c:\Users\jotas\ryze\public\icon-192.png" 192 192
-Resize-Image $logoPath "c:\Users\jotas\ryze\public\apple-touch-icon.png" 180 180
-Resize-Image $logoPath "c:\Users\jotas\ryze\public\favicon.png" 64 64
+$sourceLogo = Join-Path $publicDir "logo novo.png"
+$targetLogo = Join-Path $publicDir "Logo.png"
 
-Write-Host "All logo icons generated successfully!"
+# Copy original logo novo.png to Logo.png
+Copy-Item -Path $sourceLogo -Destination $targetLogo -Force
+
+Resize-Image $targetLogo (Join-Path $publicDir "icon-512.png") 512 512
+Resize-Image $targetLogo (Join-Path $publicDir "icon-192.png") 192 192
+Resize-Image $targetLogo (Join-Path $publicDir "apple-touch-icon.png") 180 180
+Resize-Image $targetLogo (Join-Path $publicDir "favicon.png") 64 64
+
+Write-Host "All logo icons generated successfully from logo novo.png!"
