@@ -272,14 +272,35 @@ function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k:
         </div>
         <div className="form-group">
           <label className="form-label">Sexo biológico</label>
-          <select
-            className="form-input"
-            value={profile.sex || 'masculino'}
-            onChange={e => update('sex', e.target.value as Sex)}
-          >
-            <option value="masculino">Masculino</option>
-            <option value="feminino">Feminino</option>
-          </select>
+          <div style={{ display: 'flex', gap: 6, height: 48 }}>
+            {[
+              { v: 'masculino', label: 'Masculino' },
+              { v: 'feminino', label: 'Feminino' },
+            ].map(s => {
+              const active = (profile.sex || 'masculino') === s.v;
+              return (
+                <button
+                  key={s.v}
+                  type="button"
+                  onClick={() => update('sex', s.v as Sex)}
+                  style={{
+                    flex: 1,
+                    borderRadius: 'var(--radius-md)',
+                    border: `1px solid ${active ? 'var(--accent-lime)' : 'var(--border-medium)'}`,
+                    background: active ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+                    color: active ? 'var(--accent-lime)' : 'var(--text-secondary)',
+                    fontWeight: 600,
+                    fontSize: 13,
+                    fontFamily: 'var(--font-ui)',
+                    transition: 'all 0.2s',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -731,13 +752,14 @@ function Step5({ profile, update }: { profile: Partial<UserProfile>; update: (k:
               className="form-input"
               value={profile.currentPace || '6:00/km'}
               onChange={e => update('currentPace', e.target.value)}
+              style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}
             >
-              <option value="8:00/km">+8:00/km — Caminhada acelerada</option>
-              <option value="7:30/km">7:00-7:30/km — Corrida tranquila</option>
-              <option value="6:30/km">6:00-6:30/km — Ritmo confortável</option>
-              <option value="5:30/km">5:00-5:30/km — Ritmo moderado</option>
-              <option value="4:30/km">4:00-4:30/km — Ritmo forte</option>
-              <option value="4:00/km">-4:00/km — Ritmo avançado</option>
+              <option value="8:00/km" style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}>+8:00/km — Caminhada acelerada</option>
+              <option value="7:30/km" style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}>7:00-7:30/km — Corrida tranquila</option>
+              <option value="6:30/km" style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}>6:00-6:30/km — Ritmo confortável</option>
+              <option value="5:30/km" style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}>5:00-5:30/km — Ritmo moderado</option>
+              <option value="4:30/km" style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}>4:00-4:30/km — Ritmo forte</option>
+              <option value="4:00/km" style={{ backgroundColor: '#12121E', color: '#F0F2F5' }}>-4:00/km — Ritmo avançado</option>
             </select>
           </div>
 

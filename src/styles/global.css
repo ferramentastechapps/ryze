@@ -319,8 +319,14 @@ img {
 
 .form-input:focus {
   border-color: var(--accent-lime);
-  background: rgba(200, 255, 0, 0.04);
-  box-shadow: 0 0 0 3px rgba(200, 255, 0, 0.1);
+  box-shadow: 0 0 0 3px rgba(200, 255, 0, 0.15);
+  background: var(--bg-elevated);
+}
+
+select.form-input option {
+  background-color: #12121E !important;
+  color: #F0F2F5 !important;
+  padding: 12px;
 }
 
 .form-input::placeholder {
