@@ -1,6 +1,5 @@
 // ============================================================
 // HYBRID FORGE — Zustand Store (estado global reativo)
-// Substitui o padrão manual de loadState() / onUpdate()
 // ============================================================
 
 import { create } from 'zustand';
@@ -25,10 +24,42 @@ const DEFAULT_STATE: AppState = {
   onboardingComplete: false,
 };
 
+// ─── Carregamento síncrono inicial (evita piscar no primeiro render) ────────
+function getInitialState(): AppState {
+  try {
+    const raw = localStorage.getItem('hybridforge_state');
+    if (!raw) return DEFAULT_STATE;
+    const parsed = JSON.parse(raw);
+    if (!parsed) return DEFAULT_STATE;
+
+    // Se estiver no formato Zustand persist { state: { ... } }
+    if (parsed.state) {
+      return {
+        profile: parsed.state.profile ?? null,
+        weekPlan: parsed.state.weekPlan ?? null,
+        logs: parsed.state.logs ?? [],
+        currentWeek: parsed.state.currentWeek ?? 1,
+        onboardingComplete: parsed.state.onboardingComplete ?? false,
+      };
+    }
+
+    // Se estiver no formato direto (appStore legado)
+    return {
+      profile: parsed.profile ?? null,
+      weekPlan: parsed.weekPlan ?? null,
+      logs: parsed.logs ?? [],
+      currentWeek: parsed.currentWeek ?? 1,
+      onboardingComplete: parsed.onboardingComplete ?? false,
+    };
+  } catch {
+    return DEFAULT_STATE;
+  }
+}
+
 export const useRyzeStore = create<RyzeStore>()(
   persist(
     (set, get) => ({
-      ...DEFAULT_STATE,
+      ...getInitialState(),
 
       setProfile: (profile: UserProfile) => {
         const currentWeek = get().currentWeek || 1;
@@ -63,7 +94,7 @@ export const useRyzeStore = create<RyzeStore>()(
       },
     }),
     {
-      name: 'hybridforge_state', // Mesma chave do localStorage anterior = sem migração!
+      name: 'hybridforge_state',
       storage: createJSONStorage(() => localStorage),
     }
   )
