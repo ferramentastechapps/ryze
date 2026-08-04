@@ -108,7 +108,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(155,89,255,0.12) 0%, transparent 60%), radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,212,255,0.08) 0%, transparent 50%), #08080E',
+        background: '#08080E',
         zIndex: 0,
       }} />
 
@@ -220,7 +220,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
           >
             {isOnboarded ? (
               <button
-                className="btn btn-primary btn-lg animate-glow"
+                className="btn btn-primary btn-lg"
                 onClick={() => navigate('/dashboard')}
               >
                 <LayoutDashboard size={20} />
@@ -229,7 +229,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
             ) : (
               <>
                 <button
-                  className="btn btn-primary btn-lg animate-glow"
+                  className="btn btn-primary btn-lg"
                   onClick={() => navigate('/anamnese')}
                 >
                   Criar meu plano grátis
@@ -393,7 +393,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
           </div>
 
           <button
-            className="btn btn-primary btn-lg animate-glow"
+            className="btn btn-primary btn-lg"
             style={{ marginTop: 40 }}
             onClick={() => navigate('/anamnese')}
           >

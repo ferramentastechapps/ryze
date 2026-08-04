@@ -1,8 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Check, ChevronLeft, Clock, Trophy, X, Plus, Minus, Info, Activity, Flame, Heart, Wind, Zap, Lightbulb } from 'lucide-react';
-import type { AppState, StrengthWorkout, RunWorkout, Exercise, LoggedSet } from '../types';
-import { logWorkout } from '../store/appStore';
+import {
+  Check, ChevronLeft, Clock, Trophy, X, Info, Activity,
+  Flame, Heart, Wind, Zap, Lightbulb, TrendingUp, AlertTriangle,
+} from 'lucide-react';
+import type { AppState, StrengthWorkout, RunWorkout, Exercise } from '../types';
+import { getLastExerciseData } from '../store/appStore';
+import { useRyzeStore } from '../store/ryzeStore';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface ActiveWorkoutProps {
@@ -12,23 +16,68 @@ interface ActiveWorkoutProps {
 
 const WEEK_DAYS = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
 
+// ─── Haptic Feedback Helper ─────────────────────────────────────────────────
+function haptic(pattern: number | number[]) {
+  if (navigator.vibrate) navigator.vibrate(pattern);
+}
+
 export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
   const { dayKey } = useParams<{ dayKey: string }>();
   const navigate = useNavigate();
-  const { weekPlan } = state;
+  const { weekPlan, logs } = state;
+  const addLog = useRyzeStore(s => s.addLog);
 
   const workout = dayKey && weekPlan ? weekPlan.days[dayKey] : null;
 
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
+  // Série atual por exercício: { [exerciseId]: número de séries concluídas }
+  const [completedSetsMap, setCompletedSetsMap] = useState<Record<string, number>>({});
   const [showFinished, setShowFinished] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
   const [activeExercise, setActiveExercise] = useState<string | null>(null);
   const [restTimer, setRestTimer] = useState<number | null>(null);
+  const [restTotal, setRestTotal] = useState<number>(60);
   const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
+  // ─── Wake Lock API (tela não apaga durante o treino) ────────────────────
+  useEffect(() => {
+    const requestWakeLock = async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+        }
+      } catch {
+        // Wake Lock não suportado — ok
+      }
+    };
+
+    if (isRunning) requestWakeLock();
+
+    return () => {
+      wakeLockRef.current?.release().catch(() => {});
+    };
+  }, [isRunning]);
+
+  // Reativar wake lock quando a página volta ao foco
+  useEffect(() => {
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible' && isRunning && 'wakeLock' in navigator) {
+        try {
+          wakeLockRef.current = await navigator.wakeLock.request('screen');
+        } catch { /* ok */ }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isRunning]);
+
+  // ─── Timer principal ─────────────────────────────────────────────────────
   useEffect(() => {
     if (isRunning) {
       timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
@@ -52,37 +101,67 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
-  const startRestTimer = (seconds: number) => {
+  // ─── Timer de descanso com Haptic Feedback ──────────────────────────────
+  const startRestTimer = useCallback((seconds: number) => {
     if (restTimerRef.current) clearInterval(restTimerRef.current);
     setRestTimer(seconds);
+    setRestTotal(seconds);
+
     restTimerRef.current = setInterval(() => {
       setRestTimer(prev => {
         if (prev === null || prev <= 1) {
           if (restTimerRef.current) clearInterval(restTimerRef.current);
+          // Vibrar forte quando o descanso terminar
+          haptic([300, 100, 300, 100, 300]);
           return null;
         }
+        // Vibração leve nos últimos 3 segundos
+        if (prev <= 4) haptic(60);
         return prev - 1;
       });
     }, 1000);
-  };
+  }, []);
 
-  const toggleExercise = (exId: string, restSeconds: number) => {
-    setCompletedExercises(prev => {
-      const next = new Set(prev);
-      if (next.has(exId)) {
-        next.delete(exId);
+  // ─── Série individual concluída ──────────────────────────────────────────
+  const handleSetComplete = useCallback((exerciseId: string, totalSets: number, restSeconds: number) => {
+    haptic(80); // Feedback tátil ao concluir uma série
+
+    setCompletedSetsMap(prev => {
+      const current = (prev[exerciseId] || 0) + 1;
+      const next = { ...prev, [exerciseId]: current };
+
+      if (current >= totalSets) {
+        // Todas as séries concluídas → marcar exercício como completo
+        setCompletedExercises(p => new Set([...p, exerciseId]));
+        haptic([100, 50, 100]); // Vibração de conclusão
+        if (restSeconds > 0) startRestTimer(restSeconds);
       } else {
-        next.add(exId);
+        // Série intermediária → timer de descanso mais curto
         if (restSeconds > 0) startRestTimer(restSeconds);
       }
+
+      setActiveExercise(exerciseId);
       return next;
     });
-    setActiveExercise(exId);
-  };
+  }, [startRestTimer]);
 
+  // Desmarcar um exercício (undone)
+  const handleUnmarkExercise = useCallback((exerciseId: string) => {
+    haptic(40);
+    setCompletedExercises(prev => {
+      const next = new Set(prev);
+      next.delete(exerciseId);
+      return next;
+    });
+    setCompletedSetsMap(prev => ({ ...prev, [exerciseId]: 0 }));
+  }, []);
+
+  // ─── Concluir treino ─────────────────────────────────────────────────────
   const finishWorkout = () => {
     setIsRunning(false);
     if (timerRef.current) clearInterval(timerRef.current);
+    wakeLockRef.current?.release().catch(() => {});
+    haptic([200, 100, 200, 100, 400]);
 
     const log = {
       id: `${dayKey}-${Date.now()}`,
@@ -92,9 +171,18 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
       completed: true,
       duration: Math.round(elapsedTime / 60),
     };
-    logWorkout(log);
+    addLog(log);   // Zustand store (reativo — UI atualiza automaticamente)
     onUpdate();
     setShowFinished(true);
+  };
+
+  // ─── Sair com confirmação ────────────────────────────────────────────────
+  const handleBack = () => {
+    if (completedExercises.size > 0 || Object.values(completedSetsMap).some(v => v > 0)) {
+      setShowExitConfirm(true);
+    } else {
+      navigate('/plano');
+    }
   };
 
   if (!workout || !dayKey) {
@@ -136,7 +224,7 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
         padding: '12px 20px',
         display: 'flex', alignItems: 'center', gap: 16,
       }}>
-        <button onClick={() => navigate('/plano')} className="btn btn-icon btn-ghost" style={{ flexShrink: 0 }}>
+        <button onClick={handleBack} className="btn btn-icon btn-ghost" style={{ flexShrink: 0 }}>
           <ChevronLeft size={20} />
         </button>
 
@@ -175,7 +263,68 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
         </div>
       </div>
 
-      {/* Rest timer overlay */}
+      {/* ─── Modal de confirmação de saída ─────────────────────────────── */}
+      {showExitConfirm && (
+        <div style={{
+          position: 'fixed', inset: 0,
+          background: 'rgba(8,8,14,0.92)',
+          zIndex: 300,
+          display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center',
+          padding: 32,
+          backdropFilter: 'blur(12px)',
+          animation: 'fadeIn 0.2s ease',
+        }}>
+          <div style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border-medium)',
+            borderRadius: 'var(--radius-xl)',
+            padding: 28,
+            maxWidth: 340,
+            width: '100%',
+            textAlign: 'center',
+          }}>
+            <div style={{
+              width: 56, height: 56,
+              borderRadius: 16,
+              background: 'rgba(255,95,31,0.15)',
+              border: '1px solid rgba(255,95,31,0.3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              margin: '0 auto 16px',
+              color: 'var(--accent-orange)',
+            }}>
+              <AlertTriangle size={28} />
+            </div>
+            <h3 style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>
+              Sair do treino?
+            </h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.5, marginBottom: 24 }}>
+              Você tem {completedExercises.size} exercício{completedExercises.size !== 1 ? 's' : ''} concluído{completedExercises.size !== 1 ? 's' : ''}. O progresso não será salvo.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1 }}
+                onClick={() => setShowExitConfirm(false)}
+              >
+                Continuar
+              </button>
+              <button
+                className="btn btn-danger"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  wakeLockRef.current?.release().catch(() => {});
+                  navigate('/plano');
+                }}
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Timer de descanso overlay ────────────────────────────────────── */}
       {restTimer !== null && (
         <div style={{
           position: 'fixed', inset: 0,
@@ -183,27 +332,55 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
           zIndex: 200,
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center',
-          gap: 24,
+          gap: 20,
           backdropFilter: 'blur(12px)',
           animation: 'fadeIn 0.2s ease',
         }}>
           <div style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-ui)', fontWeight: 600, letterSpacing: '0.08em', fontSize: 13, textTransform: 'uppercase' }}>
             DESCANSO
           </div>
-          <div style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: 96,
-            color: accentColor,
-            lineHeight: 1,
-            letterSpacing: '0.02em',
-          }}>
-            {restTimer}
+
+          {/* Anel de progresso do timer */}
+          <div style={{ position: 'relative', width: 180, height: 180 }}>
+            <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="90" cy="90" r="80" fill="none" stroke="var(--border-subtle)" strokeWidth="6" />
+              <circle
+                cx="90" cy="90" r="80"
+                fill="none"
+                stroke={accentColor}
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 80}
+                strokeDashoffset={2 * Math.PI * 80 * (1 - (restTimer / restTotal))}
+                style={{ transition: 'stroke-dashoffset 1s linear' }}
+              />
+            </svg>
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: 64,
+                color: restTimer <= 3 ? 'var(--accent-lime)' : accentColor,
+                lineHeight: 1,
+                letterSpacing: '0.02em',
+                transition: 'color 0.3s',
+              }}>
+                {restTimer}
+              </span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 13, fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
+                segundos
+              </span>
+            </div>
           </div>
-          <div style={{ color: 'var(--text-muted)', fontSize: 14 }}>segundos</div>
+
           <button
             className="btn btn-secondary"
             onClick={() => {
               if (restTimerRef.current) clearInterval(restTimerRef.current);
+              haptic(40);
               setRestTimer(null);
             }}
           >
@@ -213,7 +390,7 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
       )}
 
       <div style={{ padding: '20px' }}>
-        {/* Strength Workout */}
+        {/* ─── Strength Workout ──────────────────────────────────────────── */}
         {strengthWorkout && (
           <div>
             {/* Progress stats */}
@@ -241,6 +418,8 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
               {strengthWorkout.exercises.map((exercise, i) => {
                 const done = completedExercises.has(exercise.id);
                 const isActive = activeExercise === exercise.id;
+                const completedSets = completedSetsMap[exercise.id] || 0;
+                const lastData = getLastExerciseData(logs, exercise.id);
 
                 return (
                   <ExerciseCard
@@ -250,7 +429,10 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
                     isDone={done}
                     isActive={isActive}
                     accentColor={accentColor}
-                    onToggle={() => toggleExercise(exercise.id, exercise.rest)}
+                    completedSets={completedSets}
+                    lastData={lastData}
+                    onSetComplete={() => handleSetComplete(exercise.id, exercise.sets, exercise.rest)}
+                    onUnmark={() => handleUnmarkExercise(exercise.id)}
                     onOpenDemo={() => setSelectedDemo({
                       id: exercise.id,
                       name: exercise.name,
@@ -273,9 +455,9 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
 
             {/* Finish button */}
             <div style={{ marginTop: 32 }}>
-              {completedExercises.size === totalExercises ? (
+              {completedExercises.size === totalExercises && totalExercises > 0 ? (
                 <button
-                  className="btn btn-primary btn-lg animate-glow"
+                  className="btn btn-primary btn-lg"
                   style={{ width: '100%' }}
                   onClick={finishWorkout}
                 >
@@ -295,7 +477,7 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
           </div>
         )}
 
-        {/* Run Workout */}
+        {/* ─── Run Workout ───────────────────────────────────────────────── */}
         {runWorkout && (
           <div className="animate-fade-in">
             <div style={{
@@ -398,7 +580,20 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
   );
 }
 
-// ─── Exercise Card ─────────────────────────────────────────────────────────
+// ─── Exercise Card (com séries individuais + progressive overload) ──────────
+
+interface ExerciseCardProps {
+  exercise: Exercise;
+  index: number;
+  isDone: boolean;
+  isActive: boolean;
+  accentColor: string;
+  completedSets: number;
+  lastData: { weight: number; reps: string; date: string } | null;
+  onSetComplete: () => void;
+  onUnmark: () => void;
+  onOpenDemo: () => void;
+}
 
 function ExerciseCard({
   exercise,
@@ -406,18 +601,23 @@ function ExerciseCard({
   isDone,
   isActive,
   accentColor,
-  onToggle,
+  completedSets,
+  lastData,
+  onSetComplete,
+  onUnmark,
   onOpenDemo,
-}: {
-  exercise: Exercise;
-  index: number;
-  isDone: boolean;
-  isActive: boolean;
-  accentColor: string;
-  onToggle: () => void;
-  onOpenDemo: () => void;
-}) {
-  const [expanded, setExpanded] = useState(false);
+}: ExerciseCardProps) {
+
+  const lastDateLabel = lastData
+    ? (() => {
+        const d = new Date(lastData.date);
+        const diff = Math.floor((Date.now() - d.getTime()) / 86400000);
+        if (diff === 0) return 'hoje';
+        if (diff === 1) return 'ontem';
+        if (diff < 7) return `${diff}d atrás`;
+        return `${Math.floor(diff / 7)}sem atrás`;
+      })()
+    : null;
 
   return (
     <div
@@ -428,30 +628,31 @@ function ExerciseCard({
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
         transition: 'all 0.3s',
-        opacity: isDone ? 0.7 : 1,
+        opacity: isDone ? 0.75 : 1,
         animationDelay: `${index * 50}ms`,
       }}
     >
+      {/* Header do exercício */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px' }}>
-        {/* Check button */}
-        <button
-          onClick={onToggle}
-          style={{
-            width: 36, height: 36,
-            borderRadius: '50%',
-            background: isDone ? 'var(--accent-lime)' : 'var(--bg-elevated)',
-            border: `2px solid ${isDone ? 'var(--accent-lime)' : accentColor + '44'}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0,
-            transition: 'all 0.2s',
-            color: isDone ? '#08080E' : 'var(--text-muted)',
-          }}
-        >
-          <Check size={16} strokeWidth={3} />
-        </button>
+        {/* Número do exercício */}
+        <div style={{
+          width: 32, height: 32,
+          borderRadius: '50%',
+          background: isDone ? 'var(--accent-lime)' : 'var(--bg-elevated)',
+          border: `2px solid ${isDone ? 'var(--accent-lime)' : accentColor + '44'}`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+          color: isDone ? '#08080E' : 'var(--text-muted)',
+          fontFamily: 'var(--font-ui)',
+          fontWeight: 800,
+          fontSize: 13,
+          cursor: isDone ? 'pointer' : 'default',
+          transition: 'all 0.2s',
+        }} onClick={isDone ? onUnmark : undefined}>
+          {isDone ? <Check size={16} strokeWidth={3} /> : index + 1}
+        </div>
 
-        {/* Exercise info */}
+        {/* Nome + info */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{
             fontFamily: 'var(--font-ui)',
@@ -470,11 +671,9 @@ function ExerciseCard({
         {/* Demo Button */}
         <button
           onClick={onOpenDemo}
-          title="Ver Demonstração e Execução"
+          title="Ver Demonstração"
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
+            display: 'flex', alignItems: 'center', gap: 4,
             padding: '6px 10px',
             background: 'var(--bg-elevated)',
             border: '1px solid var(--border-subtle)',
@@ -491,27 +690,85 @@ function ExerciseCard({
           <Info size={13} />
           Guia
         </button>
-
-        {/* Sets/Reps badge */}
-        <div style={{
-          padding: '6px 12px',
-          background: isDone ? 'var(--accent-lime-dim)' : accentColor + '22',
-          borderRadius: 'var(--radius-full)',
-          fontFamily: 'var(--font-ui)',
-          fontWeight: 800,
-          fontSize: 14,
-          color: isDone ? 'var(--accent-lime)' : accentColor,
-          flexShrink: 0,
-          cursor: 'pointer',
-        }} onClick={() => setExpanded(e => !e)}>
-          {exercise.sets}×{exercise.reps}
-        </div>
       </div>
+
+      {/* ─── Progressive Overload: última carga ─────────────────────────── */}
+      {lastData && !isDone && (
+        <div style={{
+          margin: '0 16px',
+          padding: '8px 12px',
+          background: 'rgba(200,255,0,0.06)',
+          border: '1px solid rgba(200,255,0,0.15)',
+          borderRadius: 'var(--radius-md)',
+          display: 'flex', alignItems: 'center', gap: 8,
+          marginBottom: 12,
+        }}>
+          <TrendingUp size={13} color="var(--accent-lime)" />
+          <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+            Última vez <span style={{ color: 'var(--accent-lime)', fontWeight: 700 }}>
+              {lastData.weight}kg × {lastData.reps} reps
+            </span>
+            <span style={{ color: 'var(--text-muted)', marginLeft: 6 }}>({lastDateLabel})</span>
+          </span>
+        </div>
+      )}
+
+      {/* ─── Séries individuais ──────────────────────────────────────────── */}
+      {!isDone && (
+        <div style={{ padding: '0 16px 14px' }}>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {Array.from({ length: exercise.sets }).map((_, i) => {
+              const isSetDone = i < completedSets;
+              const isNextSet = i === completedSets;
+
+              return (
+                <button
+                  key={i}
+                  onClick={isNextSet ? onSetComplete : undefined}
+                  disabled={isSetDone || !isNextSet}
+                  style={{
+                    width: 44, height: 44,
+                    borderRadius: 'var(--radius-md)',
+                    background: isSetDone
+                      ? 'var(--accent-lime)'
+                      : isNextSet
+                      ? accentColor + '22'
+                      : 'var(--bg-elevated)',
+                    border: `2px solid ${isSetDone ? 'var(--accent-lime)' : isNextSet ? accentColor : 'var(--border-subtle)'}`,
+                    color: isSetDone
+                      ? '#08080E'
+                      : isNextSet
+                      ? accentColor
+                      : 'var(--text-muted)',
+                    fontFamily: 'var(--font-ui)',
+                    fontWeight: 800,
+                    fontSize: 14,
+                    cursor: isNextSet ? 'pointer' : 'default',
+                    transition: 'all 0.2s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transform: isNextSet ? 'scale(1.05)' : 'scale(1)',
+                  }}
+                  title={isSetDone ? `Série ${i + 1} concluída` : isNextSet ? `Concluir série ${i + 1}` : `Série ${i + 1}`}
+                >
+                  {isSetDone ? <Check size={18} strokeWidth={3} /> : i + 1}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Progresso de séries texto */}
+          {completedSets > 0 && completedSets < exercise.sets && (
+            <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8, fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
+              {completedSets} de {exercise.sets} séries concluídas
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Technique tip */}
       {exercise.technique && (
         <div style={{
-          padding: '0 16px 14px 66px',
+          padding: '0 16px 14px',
           fontSize: 12,
           color: 'var(--text-muted)',
           lineHeight: 1.5,
@@ -525,7 +782,7 @@ function ExerciseCard({
   );
 }
 
-// ─── Finished Screen ───────────────────────────────────────────────────────
+// ─── Finished Screen ────────────────────────────────────────────────────────
 
 function FinishedScreen({
   elapsedTime,
@@ -551,7 +808,7 @@ function FinishedScreen({
       alignItems: 'center', justifyContent: 'center',
       textAlign: 'center',
       padding: 32,
-      background: 'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(200,255,0,0.1) 0%, transparent 60%), #08080E',
+      background: '#08080E',
     }}>
       {/* Trophy animation */}
       <div style={{
@@ -573,7 +830,6 @@ function FinishedScreen({
         letterSpacing: '0.04em',
         color: 'var(--accent-lime)',
         marginBottom: 8,
-        animation: 'glow-pulse 2s ease-in-out infinite',
       }}>
         TREINO<br />COMPLETO!
       </h2>
@@ -618,7 +874,7 @@ function FinishedScreen({
       </div>
 
       <button
-        className="btn btn-primary btn-lg animate-glow"
+        className="btn btn-primary btn-lg"
         style={{ width: '100%', maxWidth: 320 }}
         onClick={onContinue}
       >

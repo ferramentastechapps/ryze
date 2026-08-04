@@ -59,7 +59,7 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
     <div className="page">
       <div style={{
         position: 'fixed', inset: 0,
-        background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(0,212,255,0.04) 0%, transparent 50%), var(--bg-base)',
+        background: 'var(--bg-base)',
         pointerEvents: 'none',
       }} />
 

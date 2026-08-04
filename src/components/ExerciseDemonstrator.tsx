@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Activity, ShieldCheck, Zap } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 import type { ExerciseGuide } from '../data/exerciseGuides';
 
 interface ExerciseDemonstratorProps {
@@ -15,7 +15,7 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
     if (!isPlaying) return;
 
     let startTime = Date.now();
-    const cycleDuration = 4000; // 4s total cycle
+    const cycleDuration = 4000;
 
     const interval = setInterval(() => {
       const elapsed = (Date.now() - startTime) % cycleDuration;
@@ -23,11 +23,11 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
       setProgress(pct);
 
       if (pct < 0.6) {
-        setPhase('excêntrica'); // 60% of time descending/stretching
+        setPhase('excêntrica');
       } else if (pct < 0.75) {
-        setPhase('pausa'); // 15% isometric pause
+        setPhase('pausa');
       } else {
-        setPhase('concêntrica'); // 25% explosive push/pull
+        setPhase('concêntrica');
       }
     }, 50);
 
@@ -48,60 +48,35 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
       overflow: 'hidden',
       position: 'relative',
     }}>
-      {/* Visual illustration or Animated SVG Canvas */}
+      {/* Image / SVG container */}
       <div style={{
         position: 'relative',
-        height: 240,
-        background: 'radial-gradient(ellipse 80% 80% at 50% 50%, rgba(255,255,255,0.03) 0%, #0B0B14 100%)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
+        background: '#0B0B14',
         overflow: 'hidden',
       }}>
         {guide.image ? (
-          <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <img
-              src={guide.image}
-              alt={guide.name}
-              style={{
-                maxHeight: '100%',
-                maxWidth: '100%',
-                objectFit: 'contain',
-                transition: 'transform 0.4s ease',
-                transform: isPlaying
-                  ? phase === 'excêntrica'
-                    ? 'scale(0.97) translateY(4px)'
-                    : phase === 'concêntrica'
-                    ? 'scale(1.03) translateY(-4px)'
-                    : 'scale(1)'
-                  : 'scale(1)',
-              }}
-            />
-            {/* Glowing muscle activation overlay */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              background: `radial-gradient(circle at 50% 50%, ${primaryColor}22 0%, transparent 60%)`,
-              opacity: isPlaying && phase === 'concêntrica' ? 0.8 : 0.2,
-              transition: 'opacity 0.3s ease',
-              pointerEvents: 'none',
-            }} />
-          </div>
+          /* ── Real image: let it flow naturally ── */
+          <img
+            src={guide.image}
+            alt={guide.name}
+            style={{
+              display: 'block',
+              width: '100%',
+              height: 'auto',
+            }}
+          />
         ) : (
-          /* High-tech SVG Anatomical Movement Simulation */
+          /* ── SVG fallback animation ── */
           <div style={{
-            position: 'relative',
-            width: '100%',
-            height: '100%',
+            height: 300,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
           }}>
             <svg width="180" height="180" viewBox="0 0 200 200">
-              {/* Outer tech ring */}
+              {/* Outer ring */}
               <circle cx="100" cy="100" r="85" fill="none" stroke="var(--border-subtle)" strokeWidth="2" strokeDasharray="4 4" />
-              
               {/* Progress ring */}
               <circle
                 cx="100" cy="100" r="85"
@@ -113,8 +88,7 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
                 transform="rotate(-90 100 100)"
                 style={{ transition: 'stroke-dashoffset 0.05s linear' }}
               />
-
-              {/* Animated Figure Symbol */}
+              {/* Animated figure */}
               <g transform={
                 phase === 'excêntrica'
                   ? 'translate(0, 10) scale(0.95)'
@@ -122,21 +96,15 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
                   ? 'translate(0, -6) scale(1.05)'
                   : 'translate(0, 0)'
               } style={{ transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)', transformOrigin: '100px 100px' }}>
-                {/* Head */}
                 <circle cx="100" cy="55" r="14" fill="var(--text-primary)" />
-                {/* Torso */}
                 <path d="M 82 75 L 118 75 L 110 120 L 90 120 Z" fill="var(--text-secondary)" />
-                {/* Muscle Highlight Zone */}
                 <circle cx="100" cy="90" r="18" fill={primaryColor} opacity={phase === 'concêntrica' ? '0.85' : '0.4'} />
-                {/* Arms */}
                 <path d="M 78 78 L 55 105 L 70 125" fill="none" stroke="var(--text-primary)" strokeWidth="6" strokeLinecap="round" />
                 <path d="M 122 78 L 145 105 L 130 125" fill="none" stroke="var(--text-primary)" strokeWidth="6" strokeLinecap="round" />
-                {/* Legs */}
                 <path d="M 92 120 L 80 160 L 85 180" fill="none" stroke="var(--text-secondary)" strokeWidth="7" strokeLinecap="round" />
                 <path d="M 108 120 L 120 160 L 115 180" fill="none" stroke="var(--text-secondary)" strokeWidth="7" strokeLinecap="round" />
               </g>
             </svg>
-
             <div style={{
               position: 'absolute',
               bottom: 12,
@@ -152,7 +120,7 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
           </div>
         )}
 
-        {/* Phase Indicator Badge */}
+        {/* Phase badge — overlaid on image */}
         <div style={{
           position: 'absolute',
           top: 12,
@@ -175,13 +143,13 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
           <span style={{
             width: 8, height: 8, borderRadius: '50%',
             background: primaryColor,
-            boxShadow: `0 0 10px ${primaryColor}`,
             animation: 'pulse 1.5s infinite',
+            flexShrink: 0,
           }} />
           Fase: {phase}
         </div>
 
-        {/* Activation meter badge */}
+        {/* Activation badge — overlaid on image */}
         <div style={{
           position: 'absolute',
           top: 12,

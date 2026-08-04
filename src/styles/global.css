@@ -42,9 +42,9 @@
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
   --shadow-md: 0 8px 32px rgba(0,0,0,0.5);
   --shadow-lg: 0 16px 64px rgba(0,0,0,0.6);
-  --shadow-glow-lime: 0 0 30px rgba(200,255,0,0.2);
-  --shadow-glow-orange: 0 0 30px rgba(255,95,31,0.2);
-  --shadow-glow-cyan: 0 0 30px rgba(0,212,255,0.2);
+  --shadow-glow-lime: none;
+  --shadow-glow-orange: none;
+  --shadow-glow-cyan: none;
 
   /* Spacing */
   --space-1: 4px;
@@ -197,11 +197,11 @@ img {
 .btn-primary {
   background: var(--gradient-lime);
   color: #08080E;
-  box-shadow: var(--shadow-glow-lime);
+  box-shadow: none;
 }
 
 .btn-primary:hover {
-  box-shadow: 0 0 40px rgba(200,255,0,0.35), var(--shadow-md);
+  box-shadow: none;
   transform: translateY(-2px);
 }
 
@@ -230,7 +230,7 @@ img {
 .btn-danger {
   background: var(--gradient-orange);
   color: white;
-  box-shadow: var(--shadow-glow-orange);
+  box-shadow: none;
 }
 
 .btn-sm {
@@ -572,7 +572,7 @@ select.form-input {
   color: var(--accent-lime);
   background: linear-gradient(135deg, rgba(200, 255, 0, 0.14) 0%, rgba(200, 255, 0, 0.04) 100%);
   border: 1px solid rgba(200, 255, 0, 0.3);
-  box-shadow: 0 4px 16px rgba(200, 255, 0, 0.12);
+  box-shadow: none;
   transform: translateY(-1px);
 }
 
@@ -664,8 +664,8 @@ select.form-input {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 20px rgba(200,255,0,0.2); }
-  50% { box-shadow: 0 0 40px rgba(200,255,0,0.4), 0 0 80px rgba(200,255,0,0.1); }
+  0%, 100% { box-shadow: none; }
+  50% { box-shadow: none; }
 }
 
 @keyframes particle-float {
@@ -698,7 +698,7 @@ select.form-input {
 }
 
 .animate-glow {
-  animation: glow-pulse 3s ease-in-out infinite;
+  animation: none;
 }
 
 /* Stagger children */

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info, Trophy, Lightbulb, Moon } from 'lucide-react';
+import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info, Trophy, Lightbulb, Download, Moon } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, CartesianGrid, RadialBarChart, RadialBar, Legend,
@@ -12,6 +12,45 @@ import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface ProgressProps {
   state: AppState;
+}
+
+// ─── Export helpers ─────────────────────────────────────────────────────────
+function exportJSON(state: import('../types').AppState) {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    profile: state.profile,
+    logs: state.logs,
+    weekPlan: state.weekPlan,
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ryze-historico-${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function exportCSV(logs: import('../types').WorkoutLog[]) {
+  const rows = [
+    ['Data', 'Dia', 'Tipo', 'Título', 'Duração (min)', 'Concluído'],
+    ...logs.map(l => [
+      new Date(l.date).toLocaleDateString('pt-BR'),
+      l.dayOfWeek,
+      l.workout.type,
+      l.workout.title,
+      l.duration ?? '',
+      l.completed ? 'Sim' : 'Não',
+    ]),
+  ];
+  const csv = rows.map(r => r.join(';')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ryze-historico-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export default function Progress({ state }: ProgressProps) {
@@ -36,7 +75,7 @@ export default function Progress({ state }: ProgressProps) {
     <div className="page">
       <div style={{
         position: 'fixed', inset: 0,
-        background: 'radial-gradient(ellipse 60% 40% at 50% 0%, rgba(155,89,255,0.05) 0%, transparent 50%), var(--bg-base)',
+        background: 'var(--bg-base)',
         pointerEvents: 'none',
       }} />
 
@@ -63,13 +102,42 @@ export default function Progress({ state }: ProgressProps) {
           </button>
         </div>
 
-        {/* Reset panel */}
+        {/* Settings panel */}
         {showReset && (
-          <div className="glass-card animate-fade-in" style={{ padding: 16, marginBottom: 20, borderColor: 'var(--accent-orange)' }}>
-            <div style={{ fontWeight: 700, color: 'var(--accent-orange)', marginBottom: 8, fontFamily: 'var(--font-ui)' }}>
+          <div className="glass-card animate-fade-in" style={{ padding: 16, marginBottom: 20, borderColor: 'var(--border-medium)' }}>
+            {/* Exportar dados */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: 6, fontFamily: 'var(--font-ui)', fontSize: 14 }}>
+                📦 Exportar seus dados
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 10 }}>
+                Baixe seu histórico completo de treinos para guardar ou analisar.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1, gap: 6 }}
+                  onClick={() => exportJSON(state)}
+                >
+                  <Download size={13} /> JSON
+                </button>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  style={{ flex: 1, gap: 6 }}
+                  onClick={() => exportCSV(logs)}
+                >
+                  <Download size={13} /> CSV
+                </button>
+              </div>
+            </div>
+
+            <div style={{ height: 1, background: 'var(--border-subtle)', margin: '12px 0' }} />
+
+            {/* Zona de perigo */}
+            <div style={{ fontWeight: 700, color: 'var(--accent-orange)', marginBottom: 6, fontFamily: 'var(--font-ui)', fontSize: 14 }}>
               ⚠️ Zona de Perigo
             </div>
-            <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+            <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginBottom: 10 }}>
               Isso apagará todos os seus dados, treinos e histórico. Esta ação não pode ser desfeita.
             </p>
             <button

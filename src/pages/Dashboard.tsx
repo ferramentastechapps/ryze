@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout } from '../types';
-import { getTodayWorkout, getProgressStats, logWorkout } from '../store/appStore';
+import { getTodayWorkout, getProgressStats } from '../store/appStore';
 import { loadAICoach } from '../services/geminiService';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
 import CoachTipModal from '../components/CoachTipModal';
@@ -95,14 +95,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
   return (
     <div className="page" style={{ background: 'var(--bg-base)' }}>
       <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Header bg glow */}
-        <div style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0,
-          height: '40vh',
-          background: 'radial-gradient(ellipse 100% 100% at 50% 0%, rgba(200,255,0,0.05) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+
 
         <div className="container" style={{ paddingBottom: 40 }}>
           {/* Greeting */}
@@ -579,7 +572,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
 
       {showTipModal && todayResult && (
         <CoachTipModal
-          tipText={todayAiTip}
+          tipText={todayAiTip || ''}
           workoutTitle={todayResult.workout.title}
           workoutType={todayResult.workout.type}
           onClose={() => setShowTipModal(false)}

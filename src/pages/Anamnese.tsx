@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, Check, Dumbbell, Activity, Target, Clock, Zap, Sparkles, BarChart3, Sprout, Flame, Award, Home, Building2, Sunrise, Sun, Moon, Lightbulb, Timer, ShieldAlert, Calendar, AlertTriangle } from 'lucide-react';
 import { saveProfileWithPlan } from '../store/appStore';
+import { useRyzeStore } from '../store/ryzeStore';
 import { analyzeProfile } from '../engine/aiEngine';
 import { generateAICoaching, saveAICoach, type AICoachResponse } from '../services/geminiService';
 import type { UserProfile, Sex, ExperienceLevel, PrimaryGoal, RunnerLevel } from '../types';
@@ -34,6 +35,7 @@ const initialProfile: Partial<UserProfile> = {
 
 export default function Anamnese({ onComplete }: AnamneseProps) {
   const navigate = useNavigate();
+  const setProfileWithPlan = useRyzeStore(s => s.setProfileWithPlan);
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<Partial<UserProfile>>(initialProfile);
   const [showResult, setShowResult] = useState(false);
@@ -68,7 +70,8 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
 
     try {
       const { weekPlan, aiCoach: coach } = await generateAICoaching(fullProfile);
-      saveProfileWithPlan(fullProfile, weekPlan);
+      saveProfileWithPlan(fullProfile, weekPlan); // compatibilidade retroativa
+      setProfileWithPlan(fullProfile, weekPlan);  // Zustand store (reativo)
       if (coach) {
         saveAICoach(coach);
         setAiCoach(coach);
@@ -100,7 +103,7 @@ export default function Anamnese({ onComplete }: AnamneseProps) {
       {/* Background */}
       <div style={{
         position: 'fixed', inset: 0,
-        background: 'radial-gradient(ellipse 80% 50% at 50% -10%, rgba(200,255,0,0.07) 0%, transparent 50%), #08080E',
+        background: '#08080E',
         zIndex: 0,
       }} />
 
@@ -842,7 +845,6 @@ function LoadingAnalysis() {
           fontSize: 56,
           color: 'var(--accent-lime)',
           letterSpacing: '0.08em',
-          animation: 'glow-pulse 2s ease-in-out infinite',
           marginBottom: 8,
         }}>
           FORGE
@@ -942,7 +944,7 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'radial-gradient(ellipse 80% 50% at 50% 0%, rgba(200,255,0,0.08) 0%, transparent 50%), #08080E',
+      background: '#08080E',
       padding: '40px 24px 120px',
     }}>
       <div style={{ maxWidth: 640, margin: '0 auto' }}>
@@ -954,7 +956,6 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
             background: 'var(--gradient-lime)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 20px',
-            boxShadow: 'var(--shadow-glow-lime)',
           }}>
             <Target size={32} color="#08080E" strokeWidth={2.5} />
           </div>
@@ -1172,7 +1173,7 @@ function ResultScreen({ profile, aiCoach, aiError, onContinue }: { profile: User
 
         {/* CTA */}
         <button
-          className="btn btn-primary btn-lg animate-glow"
+          className="btn btn-primary btn-lg"
           style={{ width: '100%', marginTop: 32 }}
           onClick={onContinue}
         >

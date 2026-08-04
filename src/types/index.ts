@@ -18,6 +18,7 @@ export type MuscleGroup =
   | 'gluteos'
   | 'abdomen'
   | 'core'
+  | 'trapezio'
   | 'full_body';
 
 export interface UserProfile {

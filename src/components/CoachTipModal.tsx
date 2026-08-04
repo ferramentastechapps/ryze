@@ -70,7 +70,7 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
           background: '#0B0B14',
           border: '1px solid rgba(155,89,255,0.35)',
           borderRadius: 'var(--radius-xl)',
-          boxShadow: '0 20px 50px rgba(0,0,0,0.9), 0 0 30px rgba(155,89,255,0.18)',
+          boxShadow: '0 20px 50px rgba(0,0,0,0.9)',
           overflow: 'hidden',
           animation: 'fadeInScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
@@ -157,7 +157,7 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
             {/* Visual Contraction Graphic Box */}
             <div style={{
               height: 100,
-              background: 'radial-gradient(ellipse 90% 90% at 50% 50%, rgba(155,89,255,0.12) 0%, #08080E 100%)',
+              background: '#08080E',
               border: '1px solid rgba(155,89,255,0.2)',
               borderRadius: 'var(--radius-md)',
               display: 'flex',
