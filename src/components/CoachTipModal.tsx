@@ -70,23 +70,25 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
       >
         {/* Header */}
         <div style={{
-          padding: '20px 24px',
+          padding: '18px 24px',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           background: 'linear-gradient(135deg, rgba(155,89,255,0.12) 0%, rgba(200,255,0,0.05) 100%)',
+          flexShrink: 0,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
-              width: 40, height: 40,
+              width: 38, height: 38,
               borderRadius: 12,
               background: 'rgba(155,89,255,0.2)',
               border: '1px solid rgba(155,89,255,0.35)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               color: 'var(--accent-purple)',
+              flexShrink: 0,
             }}>
-              <Sparkles size={20} />
+              <Sparkles size={18} />
             </div>
             <div>
               <div style={{
@@ -99,7 +101,7 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
               }}>
                 ORIENTAÇÃO DO COACH RYZE
               </div>
-              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, color: 'var(--text-primary)', marginTop: 2 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--text-primary)', marginTop: 2 }}>
                 {workoutTitle || 'Treino do Dia'}
               </div>
             </div>
@@ -114,20 +116,20 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
         </div>
 
         {/* Modal Scrollable Body */}
-        <div style={{ padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
+        <div style={{ padding: '20px 24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 16, flex: 1, boxSizing: 'border-box' }}>
           
           {/* Animated Biomechanics Cadence Visualizer */}
           <div style={{
             background: 'var(--bg-elevated)',
             border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
-            padding: '20px',
+            padding: '16px 18px',
             position: 'relative',
             overflow: 'hidden',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 700, color: 'var(--accent-lime)', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                <Activity size={16} /> CADÊNCIA BIOMECÂNICA RECOMENDADA
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 700, color: 'var(--accent-lime)', fontFamily: 'var(--font-ui)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                <Activity size={14} /> CADÊNCIA BIOMECÂNICA RECOMENDADA
               </div>
               <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
                 Tempo ideal: 3s — 1s — 2s
@@ -228,11 +230,12 @@ export default function CoachTipModal({ tipText, workoutTitle, workoutType = 'mu
 
         {/* Footer Action */}
         <div style={{
-          padding: '16px 24px',
+          padding: '14px 24px',
           borderTop: '1px solid var(--border-subtle)',
           background: 'rgba(0,0,0,0.4)',
           display: 'flex',
           justifyContent: 'flex-end',
+          flexShrink: 0,
         }}>
           <button
             className="btn btn-primary"
