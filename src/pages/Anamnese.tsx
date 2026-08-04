@@ -333,10 +333,13 @@ function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k:
           <div style={{
             width: 44, height: 44,
             background: 'var(--accent-lime-dim)',
+            border: '1px solid rgba(200,255,0,0.2)',
             borderRadius: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 20,
-          }}>📊</div>
+            color: 'var(--accent-lime)',
+          }}>
+            <BarChart3 size={20} />
+          </div>
           <div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, color: 'var(--accent-lime)', lineHeight: 1 }}>
               {(profile.weight / Math.pow(profile.height / 100, 2)).toFixed(1)}
