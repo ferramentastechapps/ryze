@@ -115,13 +115,13 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
               color: 'var(--text-primary)',
               lineHeight: 1,
             }}>
-              READY<br />
+              PRONTO PARA<br />
               <span style={{
                 background: 'var(--gradient-lime)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text',
-              }}>TO FORGE?</span>
+              }}>EVOLUIR?</span>
             </h1>
           </div>
 
