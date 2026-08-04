@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Play, ShieldAlert, CheckCircle2, Wind, Sparkles, BookOpen, Activity, AlertTriangle } from 'lucide-react';
+import { X, Play, ShieldAlert, CheckCircle2, Wind, Sparkles, BookOpen, Activity, AlertTriangle, Check } from 'lucide-react';
 import { getExerciseGuide } from '../data/exerciseGuides';
 import ExerciseDemonstrator from './ExerciseDemonstrator';
 import MuscleMap from './MuscleMap';
