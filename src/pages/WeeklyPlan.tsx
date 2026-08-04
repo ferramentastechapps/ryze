@@ -64,6 +64,11 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
       }} />
 
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+        {/* Header Brand */}
+        <div style={{ paddingTop: 16, paddingBottom: 16 }}>
+          <img src="/Logo.png" alt="RYZE" style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+        </div>
+
         {/* Header */}
         <div className="animate-fade-in" style={{ paddingBottom: 28 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>

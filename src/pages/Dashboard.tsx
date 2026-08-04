@@ -95,11 +95,14 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
   return (
     <div className="page" style={{ background: 'var(--bg-base)' }}>
       <div style={{ position: 'relative', zIndex: 1 }}>
-
-
         <div className="container" style={{ paddingBottom: 40 }}>
+          {/* Header Brand */}
+          <div style={{ paddingTop: 16, paddingBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <img src="/Logo.png" alt="RYZE" style={{ height: 32, width: 'auto', objectFit: 'contain' }} />
+          </div>
+
           {/* Greeting */}
-          <div className="animate-fade-in" style={{ paddingTop: 24, paddingBottom: 32 }}>
+          <div className="animate-fade-in" style={{ paddingTop: 16, paddingBottom: 32 }}>
             <div style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', marginBottom: 4 }}>
               {greeting()}, {profile?.name || 'atleta'}
             </div>

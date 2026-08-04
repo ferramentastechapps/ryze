@@ -125,20 +125,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
           margin: '0 auto',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              width: 36, height: 36,
-              background: 'var(--gradient-lime)',
-              borderRadius: 10,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <Zap size={20} color="#08080E" strokeWidth={2.5} />
-            </div>
-            <span style={{
-              fontFamily: 'var(--font-display)',
-              fontSize: 22,
-              letterSpacing: '0.08em',
-              color: 'var(--text-primary)',
-            }}>HYBRID FORGE</span>
+            <img src="/Logo.png" alt="RYZE" style={{ height: 38, width: 'auto', objectFit: 'contain' }} />
           </div>
 
           {isOnboarded ? (
@@ -410,9 +397,7 @@ export default function Landing({ isOnboarded }: LandingProps) {
           color: 'var(--text-muted)',
           fontSize: 13,
         }}>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, letterSpacing: '0.08em', color: 'var(--text-primary)', marginBottom: 8 }}>
-            HYBRID FORGE
-          </div>
+          <img src="/Logo.png" alt="RYZE" style={{ height: 32, width: 'auto', margin: '0 auto 8px', display: 'block', objectFit: 'contain' }} />
           <p>Baseado em ciência. Feito para resultados.</p>
         </footer>
       </div>

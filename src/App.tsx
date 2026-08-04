@@ -21,12 +21,7 @@ function PageLoader() {
       height: '100vh', background: '#08080E',
     }}>
       <div style={{ textAlign: 'center' }}>
-        <div style={{
-          fontFamily: 'Bebas Neue, sans-serif', fontSize: 48,
-          color: '#C8FF00', letterSpacing: '0.1em',
-        }}>
-          RYZE
-        </div>
+        <img src="/Logo.png" alt="RYZE" style={{ height: 64, width: 'auto', marginBottom: 12, objectFit: 'contain' }} />
         <div style={{
           marginTop: 16, width: 40, height: 40,
           border: '3px solid rgba(200,255,0,0.2)',
