@@ -329,6 +329,13 @@ select.form-input option {
   padding: 12px;
 }
 
+textarea.form-input {
+  min-height: 110px;
+  line-height: 1.5;
+  resize: none;
+  box-sizing: border-box;
+}
+
 .form-input::placeholder {
   color: var(--text-muted);
 }

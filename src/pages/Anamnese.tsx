@@ -587,8 +587,7 @@ function Step3({ profile, update }: { profile: Partial<UserProfile>; update: (k:
           placeholder="Ex: Quero definir o abdômen, ganhar volume nos ombros e melhorar meu condicionamento para correr 5km com facilidade..."
           value={profile.estheticGoal || ''}
           onChange={e => update('estheticGoal', e.target.value)}
-          rows={3}
-          style={{ resize: 'none' }}
+          style={{ resize: 'none', minHeight: 110, lineHeight: 1.5, padding: '14px 16px', boxSizing: 'border-box' }}
         />
       </div>
     </div>
