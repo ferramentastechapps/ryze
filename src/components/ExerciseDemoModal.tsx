@@ -280,10 +280,11 @@ export default function ExerciseDemoModal({
         }}>
           <button
             className="btn btn-primary"
-            style={{ width: '100%' }}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             onClick={onClose}
           >
-            Entendi! Iniciar série 💪
+            <Check size={18} />
+            Entendi! Fechar guia
           </button>
         </div>
       </div>

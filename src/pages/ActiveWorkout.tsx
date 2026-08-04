@@ -280,7 +280,7 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
                   onClick={finishWorkout}
                 >
                   <Trophy size={20} />
-                  Concluir treino! 🎉
+                  Concluir treino!
                 </button>
               ) : (
                 <button
@@ -355,7 +355,10 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
             {/* Intervals */}
             {runWorkout.intervals && (
               <div className="glass-card" style={{ padding: 16, marginBottom: 20 }}>
-                <div style={{ fontWeight: 700, fontFamily: 'var(--font-ui)', fontSize: 14, marginBottom: 12 }}>⚡ Intervalos</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, fontFamily: 'var(--font-ui)', fontSize: 14, marginBottom: 12 }}>
+                  <Zap size={16} style={{ color: 'var(--accent-cyan)' }} />
+                  Intervalos
+                </div>
                 {runWorkout.intervals.map((iv, i) => (
                   <div key={i} style={{
                     padding: '12px',
@@ -386,7 +389,7 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
               onClick={finishWorkout}
             >
               <Trophy size={20} />
-              Concluir corrida! 🎉
+              Concluir corrida!
             </button>
           </div>
         )}

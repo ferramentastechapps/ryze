@@ -328,7 +328,7 @@ function assignWorkout(day: string, type: string, profile: UserProfile, week: nu
       );
     case 'legs':
       return buildStrengthWorkout(
-        'Legs Day 🔥',
+        'Legs Day — Pernas & Glúteos',
         'O treino mais importante da semana. Quadríceps, isquiotibiais e glúteos em máximo volume.',
         ['pernas', 'gluteos'],
         profile, 'alta'

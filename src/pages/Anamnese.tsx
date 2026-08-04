@@ -352,10 +352,10 @@ function Step1({ profile, update }: { profile: Partial<UserProfile>; update: (k:
 }
 
 function Step2({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
-  const levels: Array<{ value: ExperienceLevel; label: string; desc: string; emoji: string }> = [
-    { value: 'iniciante', label: 'Iniciante', desc: 'Menos de 1 ano de treino consistente', emoji: '🌱' },
-    { value: 'intermediario', label: 'Intermediário', desc: '1-3 anos de treino com consistência', emoji: '⚡' },
-    { value: 'avancado', label: 'Avançado', desc: 'Mais de 3 anos, periodização conhecida', emoji: '🔥' },
+  const levels = [
+    { value: 'iniciante', label: 'Iniciante', desc: 'Menos de 1 ano de treino consistente', icon: Sprout, color: 'var(--accent-lime)' },
+    { value: 'intermediario', label: 'Intermediário', desc: '1-3 anos de treino com consistência', icon: Zap, color: 'var(--accent-cyan)' },
+    { value: 'avancado', label: 'Avançado', desc: 'Mais de 3 anos, periodização conhecida', icon: Flame, color: 'var(--accent-orange)' },
   ];
 
   const injuryOptions = ['Joelho', 'Ombro', 'Lombar', 'Quadril', 'Tornozelo', 'Cervical', 'Cotovelo'];
@@ -381,34 +381,48 @@ function Step2({ profile, update }: { profile: Partial<UserProfile>; update: (k:
 
       <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         <label className="form-label">Nível de treino</label>
-        {levels.map(level => (
-          <button
-            key={level.value}
-            onClick={() => update('experienceLevel', level.value)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '16px 20px',
-              borderRadius: 'var(--radius-lg)',
-              border: `2px solid ${profile.experienceLevel === level.value ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
-              background: profile.experienceLevel === level.value ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
-              cursor: 'pointer',
-              textAlign: 'left',
-              transition: 'all 0.2s',
-              width: '100%',
-            }}
-          >
-            <span style={{ fontSize: 24 }}>{level.emoji}</span>
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>{level.label}</div>
-              <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>{level.desc}</div>
-            </div>
-            {profile.experienceLevel === level.value && (
-              <Check size={18} style={{ color: 'var(--accent-lime)', marginLeft: 'auto', flexShrink: 0 }} />
-            )}
-          </button>
-        ))}
+        {levels.map(level => {
+          const Icon = level.icon;
+          const isSelected = profile.experienceLevel === level.value;
+          return (
+            <button
+              key={level.value}
+              onClick={() => update('experienceLevel', level.value)}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 16,
+                padding: '16px 20px',
+                borderRadius: 'var(--radius-lg)',
+                border: `2px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
+                background: isSelected ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+                cursor: 'pointer',
+                textAlign: 'left',
+                transition: 'all 0.2s',
+                width: '100%',
+              }}
+            >
+              <div style={{
+                width: 40, height: 40,
+                borderRadius: 12,
+                background: level.color + '22',
+                border: `1px solid ${level.color}44`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: level.color,
+                flexShrink: 0,
+              }}>
+                <Icon size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)' }}>{level.label}</div>
+                <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>{level.desc}</div>
+              </div>
+              {isSelected && (
+                <Check size={18} style={{ color: 'var(--accent-lime)', marginLeft: 'auto', flexShrink: 0 }} />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       <div className="animate-fade-in">
@@ -446,29 +460,38 @@ function Step2({ profile, update }: { profile: Partial<UserProfile>; update: (k:
         <label className="form-label" style={{ display: 'block', marginBottom: 8 }}>Acesso à academia?</label>
         <div style={{ display: 'flex', gap: 10 }}>
           {[
-            { v: true, label: '🏋️ Academia completa' },
-            { v: false, label: '🏠 Treino em casa' },
-          ].map(opt => (
-            <button
-              key={String(opt.v)}
-              onClick={() => update('hasGymAccess', opt.v)}
-              style={{
-                flex: 1,
-                padding: '14px',
-                borderRadius: 'var(--radius-md)',
-                border: `2px solid ${profile.hasGymAccess === opt.v ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
-                background: profile.hasGymAccess === opt.v ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
-                color: 'var(--text-primary)',
-                fontWeight: 600,
-                fontSize: 14,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                fontFamily: 'var(--font-ui)',
-              }}
-            >
-              {opt.label}
-            </button>
-          ))}
+            { v: true, label: 'Academia completa', icon: Building2 },
+            { v: false, label: 'Treino em casa', icon: Home },
+          ].map(opt => {
+            const Icon = opt.icon;
+            const isSelected = profile.hasGymAccess === opt.v;
+            return (
+              <button
+                key={String(opt.v)}
+                onClick={() => update('hasGymAccess', opt.v)}
+                style={{
+                  flex: 1,
+                  padding: '14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: `2px solid ${isSelected ? 'var(--accent-lime)' : 'var(--border-subtle)'}`,
+                  background: isSelected ? 'var(--accent-lime-dim)' : 'var(--bg-card)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 600,
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontFamily: 'var(--font-ui)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Icon size={16} style={{ color: isSelected ? 'var(--accent-lime)' : 'var(--text-muted)' }} />
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -476,11 +499,11 @@ function Step2({ profile, update }: { profile: Partial<UserProfile>; update: (k:
 }
 
 function Step3({ profile, update }: { profile: Partial<UserProfile>; update: (k: keyof UserProfile, v: unknown) => void }) {
-  const goals: Array<{ value: PrimaryGoal; label: string; desc: string; color: string; emoji: string }> = [
-    { value: 'hipertrofia', label: 'Hipertrofia Máxima', desc: 'Foco em massa muscular e estética', color: 'var(--accent-orange)', emoji: '💪' },
-    { value: 'perda_gordura', label: 'Perda de Gordura', desc: 'Definição e redução do % de gordura', color: 'var(--accent-cyan)', emoji: '🔥' },
-    { value: 'performance', label: 'Performance Híbrida', desc: 'Força + condicionamento avançado', color: 'var(--accent-purple)', emoji: '⚡' },
-    { value: 'equilibrio', label: 'Equilíbrio Estético', desc: 'Corpo bonito, saúde e bem-estar', color: 'var(--accent-lime)', emoji: '✨' },
+  const goals = [
+    { value: 'hipertrofia', label: 'Hipertrofia Máxima', desc: 'Foco em massa muscular e estética', color: 'var(--accent-orange)', icon: Dumbbell },
+    { value: 'perda_gordura', label: 'Perda de Gordura', desc: 'Definição e redução do % de gordura', color: 'var(--accent-cyan)', icon: Flame },
+    { value: 'performance', label: 'Performance Híbrida', desc: 'Força + condicionamento avançado', color: 'var(--accent-purple)', icon: Zap },
+    { value: 'equilibrio', label: 'Equilíbrio Estético', desc: 'Corpo bonito, saúde e bem-estar', color: 'var(--accent-lime)', icon: Award },
   ];
 
   return (
@@ -497,6 +520,7 @@ function Step3({ profile, update }: { profile: Partial<UserProfile>; update: (k:
       <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
         {goals.map(goal => {
           const selected = profile.primaryGoal === goal.value;
+          const Icon = goal.icon;
           return (
             <button
               key={goal.value}
@@ -513,7 +537,16 @@ function Step3({ profile, update }: { profile: Partial<UserProfile>; update: (k:
                 overflow: 'hidden',
               }}
             >
-              <div style={{ fontSize: 28, marginBottom: 10 }}>{goal.emoji}</div>
+              <div style={{
+                width: 40, height: 40,
+                borderRadius: 10,
+                background: goal.color + '22',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: goal.color,
+                marginBottom: 12,
+              }}>
+                <Icon size={20} />
+              </div>
               <div style={{
                 fontWeight: 700,
                 fontSize: 14,
