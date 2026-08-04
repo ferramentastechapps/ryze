@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout } from '../types';
 import { getTodayWorkout, getProgressStats, logWorkout } from '../store/appStore';
 import { loadAICoach } from '../services/geminiService';
+import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface DashboardProps {
   state: AppState;
@@ -42,6 +44,7 @@ function getWorkoutBg(workout: DayWorkout) {
 
 export default function Dashboard({ state, onUpdate }: DashboardProps) {
   const navigate = useNavigate();
+  const [demoExercise, setDemoExercise] = useState<{ id: string; name: string; muscleGroups: string[] } | null>(null);
   const { profile, weekPlan, logs } = state;
 
   const todayResult = getTodayWorkout(state);
@@ -231,40 +234,69 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
             </div>
           )}
 
-          {/* 🔮 Gemini Daily Tip */}
+          {/* 🔮 Gemini / Coach RYZE Daily Tip */}
           {todayAiTip && todayResult && todayResult.workout.type !== 'descanso' && (
-            <div className="animate-fade-in glass-card" style={{
-              padding: '16px 18px',
-              marginBottom: 16,
-              background: 'linear-gradient(135deg, rgba(155,89,255,0.10) 0%, rgba(200,255,0,0.04) 100%)',
-              borderColor: 'rgba(155,89,255,0.25)',
-              display: 'flex',
-              gap: 12,
-              alignItems: 'flex-start',
-              animationDelay: '120ms',
-            }}>
+            <div
+              className="animate-fade-in glass-card"
+              onClick={() => {
+                if (todayResult.workout.type === 'musculacao' && todayResult.workout.exercises.length > 0) {
+                  const ex = todayResult.workout.exercises[0];
+                  setDemoExercise({ id: ex.id, name: ex.name, muscleGroups: ex.muscleGroups });
+                } else {
+                  setDemoExercise({ id: 'supino_reto', name: 'Supino Reto com Barra', muscleGroups: ['peito', 'triceps', 'ombros'] });
+                }
+              }}
+              style={{
+                padding: '16px 18px',
+                marginBottom: 16,
+                background: 'linear-gradient(135deg, rgba(155,89,255,0.12) 0%, rgba(200,255,0,0.05) 100%)',
+                borderColor: 'rgba(155,89,255,0.3)',
+                display: 'flex',
+                gap: 12,
+                alignItems: 'flex-start',
+                animationDelay: '120ms',
+                cursor: 'pointer',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              }}
+            >
               <div style={{
-                width: 32, height: 32,
-                borderRadius: 9,
+                width: 34, height: 34,
+                borderRadius: 10,
                 background: 'rgba(155,89,255,0.2)',
-                border: '1px solid rgba(155,89,255,0.3)',
+                border: '1px solid rgba(155,89,255,0.35)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
                 marginTop: 2,
               }}>
-                <Sparkles size={14} color="var(--accent-purple)" />
+                <Sparkles size={16} color="var(--accent-purple)" />
               </div>
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: 'var(--accent-purple)',
-                  fontFamily: 'var(--font-ui)',
-                  letterSpacing: '0.08em',
-                  textTransform: 'uppercase',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
                   marginBottom: 6,
                 }}>
-                  COACH RYZE — DICA DE HOJE
+                  <span style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: 'var(--accent-purple)',
+                    fontFamily: 'var(--font-ui)',
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                  }}>
+                    COACH RYZE — DICA DE HOJE
+                  </span>
+                  <span style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: 'var(--accent-lime)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}>
+                    <Play size={10} fill="var(--accent-lime)" /> Ver Guia Visual →
+                  </span>
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   {todayAiTip}
@@ -529,6 +561,15 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           </div>
         </div>
       </div>
+
+      {demoExercise && (
+        <ExerciseDemoModal
+          exerciseId={demoExercise.id}
+          exerciseName={demoExercise.name}
+          muscleGroups={demoExercise.muscleGroups}
+          onClose={() => setDemoExercise(null)}
+        />
+      )}
     </div>
   );
 }
