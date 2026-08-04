@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useRyzeStore } from './store/ryzeStore';
 import Navigation from './components/Navigation';
 
-// Importação estática direta (elimina piscada de Suspense/lazy loading)
+// Importação estática direta
 import Landing from './pages/Landing';
 import Anamnese from './pages/Anamnese';
 import Dashboard from './pages/Dashboard';
@@ -11,6 +12,14 @@ import ActiveWorkout from './pages/ActiveWorkout';
 import Progress from './pages/Progress';
 
 import './styles/global.css';
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 export default function App() {
   const { onboardingComplete, profile, weekPlan, logs } = useRyzeStore();
@@ -22,6 +31,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Landing isOnboarded={isOnboarded} />} />
         <Route path="/anamnese" element={<Anamnese onComplete={refresh} />} />

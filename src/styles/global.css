@@ -695,11 +695,11 @@ select.form-input {
 }
 
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.25s ease-out both;
 }
 
 .animate-fade-in-scale {
-  animation: fadeInScale 0.4s ease-out forwards;
+  animation: fadeInScale 0.25s ease-out both;
 }
 
 .animate-float {
@@ -710,14 +710,18 @@ select.form-input {
   animation: none;
 }
 
-/* Stagger children */
+/* Stagger children — both fill-mode evita a pisada antes da animação começar */
+.stagger-children > * {
+  animation: fadeIn 0.25s ease-out both;
+}
+
 .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
-.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
-.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
-.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
-.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
-.stagger-children > *:nth-child(7) { animation-delay: 480ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 30ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 90ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 150ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 180ms; }
 
 /* ─── Skeleton Loading ────────────────────────────────────────── */
 .skeleton {
