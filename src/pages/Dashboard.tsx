@@ -5,6 +5,7 @@ import type { AppState, DayWorkout, StrengthWorkout, RunWorkout } from '../types
 import { getTodayWorkout, getProgressStats, logWorkout } from '../store/appStore';
 import { loadAICoach } from '../services/geminiService';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
+import CoachTipModal from '../components/CoachTipModal';
 
 interface DashboardProps {
   state: AppState;
@@ -45,6 +46,7 @@ function getWorkoutBg(workout: DayWorkout) {
 export default function Dashboard({ state, onUpdate }: DashboardProps) {
   const navigate = useNavigate();
   const [demoExercise, setDemoExercise] = useState<{ id: string; name: string; muscleGroups: string[] } | null>(null);
+  const [showTipModal, setShowTipModal] = useState(false);
   const { profile, weekPlan, logs } = state;
 
   const todayResult = getTodayWorkout(state);
@@ -238,14 +240,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           {todayAiTip && todayResult && todayResult.workout.type !== 'descanso' && (
             <div
               className="animate-fade-in glass-card"
-              onClick={() => {
-                if (todayResult.workout.type === 'musculacao' && todayResult.workout.exercises.length > 0) {
-                  const ex = todayResult.workout.exercises[0];
-                  setDemoExercise({ id: ex.id, name: ex.name, muscleGroups: ex.muscleGroups });
-                } else {
-                  setDemoExercise({ id: 'supino_reto', name: 'Supino Reto com Barra', muscleGroups: ['peito', 'triceps', 'ombros'] });
-                }
-              }}
+              onClick={() => setShowTipModal(true)}
               style={{
                 padding: '16px 18px',
                 marginBottom: 16,
@@ -295,7 +290,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                     alignItems: 'center',
                     gap: 4,
                   }}>
-                    <Play size={10} fill="var(--accent-lime)" /> Ver Guia Visual →
+                    <Sparkles size={11} color="var(--accent-lime)" /> Ver Análise em Detalhes →
                   </span>
                 </div>
                 <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
@@ -568,6 +563,15 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           exerciseName={demoExercise.name}
           muscleGroups={demoExercise.muscleGroups}
           onClose={() => setDemoExercise(null)}
+        />
+      )}
+
+      {showTipModal && todayResult && (
+        <CoachTipModal
+          tipText={todayAiTip}
+          workoutTitle={todayResult.workout.title}
+          workoutType={todayResult.workout.type}
+          onClose={() => setShowTipModal(false)}
         />
       )}
     </div>
