@@ -25,6 +25,32 @@ interface AuthStore {
   refreshProfile: () => Promise<void>;
 }
 
+async function buildSession(user: User) {
+  const trialStart = new Date();
+  const trialEnd = new Date();
+  trialEnd.setDate(trialEnd.getDate() + 30);
+
+  const fallback: UserProfile_Auth = {
+    id: user.id,
+    email: user.email ?? null,
+    full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+    avatar_url: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
+    trial_start_date: trialStart.toISOString(),
+    trial_end_date: trialEnd.toISOString(),
+    subscription_status: 'trial',
+    stripe_customer_id: null,
+    stripe_subscription_id: null,
+  };
+
+  try {
+    const profile = await getOrCreateProfile(user);
+    const status = getAccessStatus(profile);
+    return { profile, status };
+  } catch {
+    return { profile: fallback, status: 'trial' as AccessStatus };
+  }
+}
+
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   authProfile: null,
@@ -37,75 +63,47 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthLoading: (loading) => set({ authLoading: loading }),
 
   initialize: () => {
-    const handleAuthUser = async (user: User | null) => {
+    // Detectar se há token OAuth na URL (fluxo implicit pós-redirect do Google)
+    const hasTokenInHash = window.location.hash.includes('access_token');
+
+    // Único ponto de verdade: onAuthStateChange do Supabase
+    // O Supabase processa o hash da URL automaticamente antes de emitir o evento
+    const unsubscribe = onAuthStateChange(async (user) => {
+      console.log('[AuthStore] onAuthStateChange user:', user?.email ?? 'null');
+
       if (!user) {
-        // Se a sessão é nula e havia hash expirado/inválido na URL, limpa a URL para permitir novo login
-        if (window.location.hash.includes('access_token')) {
+        // Limpar hash de erro/token inválido da URL
+        if (window.location.hash.includes('access_token') || window.location.hash.includes('error')) {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
-        set({
-          user: null,
-          authProfile: null,
-          accessStatus: 'unauthenticated',
-          authLoading: false,
-        });
+        set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
         return;
       }
 
       set({ user, authLoading: true });
 
-      try {
-        const profile = await getOrCreateProfile(user);
-        const status = getAccessStatus(profile);
+      const { profile, status } = await buildSession(user);
 
-        // Limpa a hash do OAuth da URL após autenticação bem sucedida
-        if (window.location.hash.includes('access_token')) {
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      // Limpar token da URL após autenticação bem-sucedida
+      if (window.location.hash.includes('access_token')) {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+
+      set({ user, authProfile: profile, accessStatus: status, authLoading: false });
+    });
+
+    // Se NÃO há token na URL (sessão normal, não redirect OAuth),
+    // precisamos do getSession() para inicializar o estado.
+    // Se HÁ token na URL, o onAuthStateChange vai disparar automaticamente.
+    if (!hasTokenInHash) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session?.user) {
+          // Não tem sessão ativa e não é redirect OAuth → vai pro login
+          set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
         }
-
-        set({
-          user,
-          authProfile: profile,
-          accessStatus: status,
-          authLoading: false,
-        });
-      } catch (err) {
-        console.error('[AuthStore] Error loading auth profile:', err);
-        const trialStart = new Date();
-        const trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + 30);
-        const fallbackProfile: UserProfile_Auth = {
-          id: user.id,
-          email: user.email ?? null,
-          full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
-          avatar_url: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
-          trial_start_date: trialStart.toISOString(),
-          trial_end_date: trialEnd.toISOString(),
-          subscription_status: 'trial',
-          stripe_customer_id: null,
-          stripe_subscription_id: null,
-        };
-        set({
-          user,
-          authProfile: fallbackProfile,
-          accessStatus: 'trial',
-          authLoading: false,
-        });
-      }
-    };
-
-    // Verificação de sessão inicial do Supabase
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('[AuthStore] getSession error:', error);
-      }
-      handleAuthUser(session?.user ?? null);
-    });
-
-    // Escuta eventos de login/logout no Supabase Auth
-    const unsubscribe = onAuthStateChange(async (user) => {
-      handleAuthUser(user);
-    });
+        // Se tem sessão, o onAuthStateChange já vai tratar
+      });
+    }
 
     return unsubscribe;
   },
@@ -113,9 +111,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   refreshProfile: async () => {
     const { user } = get();
     if (!user) return;
-    const profile = await getOrCreateProfile(user);
-    const status = getAccessStatus(profile);
+    const { profile, status } = await buildSession(user);
     set({ authProfile: profile, accessStatus: status });
   },
 }));
-
