@@ -1,5 +1,5 @@
 // ============================================================
-// HYBRID FORGE — Base de Dados de Guias & Demonstrações de Exercícios
+// RYZE — Base de Dados de Guias & Demonstrações de Exercícios
 // ============================================================
 
 export interface ExerciseGuide {
@@ -7,12 +7,14 @@ export interface ExerciseGuide {
   name: string;
   category: 'peito' | 'costas' | 'pernas' | 'ombros' | 'biceps' | 'triceps' | 'gluteos' | 'core';
   image?: string;
+  gifUrls: string[];       // URLs em ordem de prioridade (fallback automático entre CDNs)
   primaryMuscles: string[];
   secondaryMuscles: string[];
   equipmentNeeded: string;
   difficulty: 'Iniciante' | 'Intermediário' | 'Avançado';
   activationLevel: number; // 0 a 100%
   tempo: string; // ex: "3-0-1-0" (descida - pausa - subida - pausa)
+  motionType: 'squat' | 'bench_press' | 'pull_up' | 'hip_thrust' | 'overhead_press' | 'bicep_curl' | 'tricep_extension' | 'generic';
   steps: {
     setup: string[];
     execution: string[];
@@ -22,41 +24,91 @@ export interface ExerciseGuide {
   proTips: string[];
 }
 
+export type MuscleZone =
+  | 'peitoral' | 'deltoide_ant' | 'deltoide_lat' | 'deltoide_post'
+  | 'biceps' | 'triceps' | 'antebraco'
+  | 'abs' | 'obliquos' | 'serratiil'
+  | 'quadriceps' | 'adutores' | 'tibial'
+  | 'trapezio' | 'romboides' | 'latissimo' | 'eretores'
+  | 'gluteo_max' | 'gluteo_med' | 'isquiotibiais' | 'panturrilha';
+
+export interface MuscleActivation {
+  primary: MuscleZone[];
+  secondary: MuscleZone[];
+}
+
+export const MUSCLE_ACTIVATION_MAP: Record<ExerciseGuide['category'], MuscleActivation> = {
+  peito: {
+    primary: ['peitoral', 'serratiil'],
+    secondary: ['triceps', 'deltoide_ant'],
+  },
+  costas: {
+    primary: ['latissimo', 'romboides', 'trapezio'],
+    secondary: ['biceps', 'eretores', 'deltoide_post'],
+  },
+  pernas: {
+    primary: ['quadriceps', 'gluteo_max'],
+    secondary: ['isquiotibiais', 'adutores', 'eretores', 'panturrilha'],
+  },
+  ombros: {
+    primary: ['deltoide_ant', 'deltoide_lat'],
+    secondary: ['triceps', 'trapezio', 'deltoide_post'],
+  },
+  biceps: {
+    primary: ['biceps'],
+    secondary: ['antebraco', 'deltoide_ant'],
+  },
+  triceps: {
+    primary: ['triceps'],
+    secondary: ['antebraco', 'deltoide_post'],
+  },
+  gluteos: {
+    primary: ['gluteo_max', 'gluteo_med'],
+    secondary: ['isquiotibiais', 'quadriceps', 'adutores'],
+  },
+  core: {
+    primary: ['abs', 'obliquos'],
+    secondary: ['eretores', 'quadriceps', 'serratiil'],
+  },
+};
+
 export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
   supino_reto: {
     id: 'supino_reto',
     name: 'Supino Reto com Barra',
     category: 'peito',
-    image: '/guides/supino_reto.png',
-    primaryMuscles: ['Peitoral Maior (Porção Esternal)', 'Peitoral Maior (Porção Clavicular)'],
-    secondaryMuscles: ['Tríceps Braquial', 'Deltoide Anterior', 'Serrátil Anterior'],
+    motionType: 'bench_press',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press/0.jpg',
+      'https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/chest/barbell-bench-press.gif',
+    ],
+    primaryMuscles: ['Peitoral Maior (Esternal & Clavicular)', 'Serrátil Anterior'],
+    secondaryMuscles: ['Tríceps Braquial', 'Deltoide Anterior'],
     equipmentNeeded: 'Barra Olímpica + Banco Reto',
     difficulty: 'Intermediário',
     activationLevel: 95,
     tempo: '3-0-1-0 (3s descida, 1s subida)',
     steps: {
       setup: [
-        'Deite-se no banco mantendo os pés firmes no chão.',
+        'Deite-se no banco mantendo os pés firmes e cravados no chão.',
         'Faça uma leve retração escapular (junte as escápulas para trás e para baixo).',
-        'Segure a barra com uma pegada um pouco mais larga que a largura dos ombros.',
-        'Desencaixe a barra mantendo os pulsos neutros e retos.',
+        'Segure a barra com pegada um pouco mais larga que os ombros.',
+        'Desencaixe a barra mantendo os pulsos firmes e neutros.',
       ],
       execution: [
-        'Desça a barra de forma controlada (3 segundos) até tocar suavemente a linha dos mamilos.',
-        'Mantenha os cotovelos a aproximadamente 45° em relação ao tronco (evite abrir em 90°).',
-        'Empurre a barra de forma explosiva até quase estender os cotovelos sem perder o arco natural da coluna.',
+        'Desça a barra de forma controlada (3 segundos) até tocar suavemente o peito.',
+        'Mantenha os cotovelos a aproximadamente 45° em relação ao tronco.',
+        'Empurre a barra com força explosiva até a extensão completa dos braços.',
       ],
-      breathing: 'Inspire profundamente durante a descida (fase excêntrica) e expire forte ao empurrar (fase concêntrica).',
+      breathing: 'Inspire profundamente durante a descida e expire forte ao empurrar a carga.',
       mistakes: [
-        'Abrir os cotovelos em 90° (estressa excessivamente o manguito rotador).',
+        'Abrir os cotovelos em 90° (estressa o manguito rotador).',
         'Quicar a barra no peito aproveitando o impulso.',
-        'Tirar os glúteos do banco durante a carga pesada.',
-        'Dobrar os pulsos para trás suportando o peso nas articulações.',
+        'Tirar os glúteos do banco durante o esforço.',
       ],
     },
     proTips: [
-      'Empurre o chão com os pés (leg drive) para transferir força de todo o corpo para o movimento.',
-      'Imagine que está tentando entortar a barra para fora com as mãos para ativar os lats e estabilizar o ombro.',
+      'Empurre o chão com os pés (leg drive) para transferir força das pernas para o movimento.',
     ],
   },
 
@@ -64,7 +116,11 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     id: 'supino_inclinado',
     name: 'Supino Inclinado com Halteres',
     category: 'peito',
-    primaryMuscles: ['Peitoral Maior (Porção Superior / Clavicular)'],
+    motionType: 'bench_press',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Press/0.jpg',
+    ],
+    primaryMuscles: ['Peitoral Superior (Porção Clavicular)'],
     secondaryMuscles: ['Deltoide Anterior', 'Tríceps Braquial'],
     equipmentNeeded: 'Halteres + Banco Inclinado (30°-45°)',
     difficulty: 'Intermediário',
@@ -72,23 +128,22 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     tempo: '3-1-1-0',
     steps: {
       setup: [
-        'Ajuste o banco em uma inclinação de 30° a 45° (inclinações muito altas ativam mais ombro do que peito).',
+        'Ajuste o banco em uma inclinação entre 30° e 45°.',
         'Sente-se com os halteres apoiados sobre as coxas.',
-        'Use os joelhos para dar um impulso leve e posicionar os halteres na altura do peito superior.',
+        'Imulsione os joelhos para elevar os halteres até a altura do peitoral superior.',
       ],
       execution: [
-        'Baixe os halteres nas laterais do peito abrindo bem a caixa torácica.',
-        'Empurre os halteres para cima aproximando-os ligeiramente no topo sem encostá-los.',
-        'Mantenha a tensão constante no peitoral durante todo o movimento.',
+        'Abra o peito e desça os halteres nas laterais de forma controlada.',
+        'Empurre os halteres para cima convergindo-os no topo sem encostar.',
       ],
-      breathing: 'Inspire ao abrir os braços na descida e expire ao fechar no topo.',
+      breathing: 'Inspire na descida e expire ao empurrar os halteres.',
       mistakes: [
-        'Inclinação excessiva do banco (acima de 45° virando treino de ombro).',
-        'Deixar os halteres caírem rápido demais sem controle.',
+        'Inclinação excessiva do banco acima de 45°.',
+        'Deixar os cotovelos caírem desalinhados.',
       ],
     },
     proTips: [
-      'No ponto mais baixo, sinta um alongamento profundo no peitoral superior antes de iniciar a subida.',
+      'Sinta um alongamento profundo na porção superior do peitoral no ponto mais baixo.',
     ],
   },
 
@@ -96,8 +151,11 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     id: 'agachamento',
     name: 'Agachamento Livre com Barra',
     category: 'pernas',
-    image: '/guides/agachamento.png',
-    primaryMuscles: ['Quadríceps (Vasto Lateral, Medial e Intermédio)', 'Glúteo Máximo'],
+    motionType: 'squat',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg',
+    ],
+    primaryMuscles: ['Quadríceps (Vasto Lateral, Medial, Intermédio)', 'Glúteo Máximo'],
     secondaryMuscles: ['Isquiotibiais', 'Eretores da Espinha', 'Core / Abdômen'],
     equipmentNeeded: 'Barra Olímpica + RACK de Agachamento',
     difficulty: 'Avançado',
@@ -105,24 +163,23 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     tempo: '3-1-1-0',
     steps: {
       setup: [
-        'Posicione a barra no rack na altura da parte média do esterno.',
-        'Entre debaixo da barra apoiando-a sobre o trapézio (High Bar) ou deltoide posterior (Low Bar).',
-        'Dê 2 a 3 passos para trás. Pés afastados na largura dos ombros com pontas ligeiramente apontadas para fora (15-30°).',
+        'Posicione a barra no rack na altura do trapézio superior.',
+        'Entre sob a barra, apoie-a firmemente e retire-a do suporte.',
+        'Afastamento dos pés na largura dos ombros com pontas levemente voltadas para fora.',
       ],
       execution: [
-        'Inicie a descida projetando o quadril para trás e dobrando os joelhos simultaneamente.',
-        'Desça até que a articulação do quadril fique abaixo do nível dos joelhos (agachamento profundo/paralelo).',
-        'Empurre o chão com o meio do pé subindo o quadril e o peito no mesmo ritmo.',
+        'Inicie o movimento projetando o quadril para trás e flexionando os joelhos.',
+        'Desça até o quadril passar ligeiramente da linha dos joelhos (paralelo ou profundo).',
+        'Empurre o chão com o meio dos pés subindo de forma firme.',
       ],
-      breathing: 'Manobra de Valsalva: Inspire fundo na posição inicial, trave o abdômen (brace) e só solte o ar após passar o ponto crítico da subida.',
+      breathing: 'Inspire fundo no topo, trave o abdômen (bracing) e expire ao completar a subida.',
       mistakes: [
-        'Valgo dinâmico (deixar os joelhos caírem para dentro na subida).',
-        'Arredondar a lombar no ponto mais fundo (butt wink).',
-        'Elevar o calcanhar do chão ao agachar.',
+        'Deixar os joelhos caírem para dentro (valgo dinâmico).',
+        'Arredondar a coluna lombar na parte mais baixa.',
       ],
     },
     proTips: [
-      'Pense em empurrar os joelhos para fora na direção dos dedos dos pés durante toda a descida e subida.',
+      'Force os joelhos para fora acompanhando a linha das pontas dos pés.',
     ],
   },
 
@@ -130,33 +187,35 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     id: 'barra_fixa',
     name: 'Barra Fixa (Pull-Up)',
     category: 'costas',
-    image: '/guides/barra_fixa.png',
-    primaryMuscles: ['Latíssimo do Dorso (Grande Dorsal)'],
-    secondaryMuscles: ['Bíceps Braquial', 'Braquiorradial', 'Redondo Maior', 'Trapezius'],
+    motionType: 'pull_up',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pullups/0.jpg',
+    ],
+    primaryMuscles: ['Latíssimo do Dorso (Grande Dorsal)', 'Romboides'],
+    secondaryMuscles: ['Bíceps Braquial', 'Braquiorradial', 'Trapézio'],
     equipmentNeeded: 'Barra Fixa',
     difficulty: 'Intermediário',
     activationLevel: 92,
     tempo: '2-1-1-1',
     steps: {
       setup: [
-        'Segure a barra com pegada pronada (palmas para a frente) um pouco mais larga que os ombros.',
-        'Fique pendurado com os braços totalmente estendidos (Dead Hang).',
-        'Inicie ativando as escápulas: puxe as omoplatas para baixo sem dobrar os braços (Depressão Escapular).',
+        'Segure a barra com pegada pronada um pouco mais larga que a dos ombros.',
+        'Fique totalmente pendurado com os braços estendidos.',
+        'Inicie puxando as escápulas para baixo.',
       ],
       execution: [
-        'Puxe o corpo para cima levando o peito em direção à barra.',
-        'Suba até que o queixo passe o nível da barra e o peito quase toque a barra.',
-        'Retorne à posição inicial estendendo os braços de forma controlada.',
+        'Puxe o corpo para cima direcionando o peito para a barra.',
+        'Suba até o queixo ultrapassar a altura da barra.',
+        'Retorne à posição inicial de maneira totalmente controlada.',
       ],
-      breathing: 'Inspire na descida e expire ao puxar o corpo para cima.',
+      breathing: 'Inspire na descida e expire durante a puxada.',
       mistakes: [
-        'Kipping ou usar impulso de pernas para subir.',
-        'Não realizar amplitude completa (subir pela metade ou não descer totalmente).',
-        'Encolher os ombros junto às orelhas no topo.',
+        'Usar impulso de pernas (kipping).',
+        'Não descer até a extensão completa dos braços.',
       ],
     },
     proTips: [
-      'Imagine que está tentando puxar os cotovelos para baixo em direção aos bolsos das calças, em vez de focar nas mãos.',
+      'Pense em guiar a subida com os cotovelos apontados para o chão.',
     ],
   },
 
@@ -164,31 +223,34 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     id: 'hip_thrust',
     name: 'Hip Thrust com Barra',
     category: 'gluteos',
-    primaryMuscles: ['Glúteo Máximo'],
+    motionType: 'hip_thrust',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg',
+    ],
+    primaryMuscles: ['Glúteo Máximo', 'Glúteo Médio'],
     secondaryMuscles: ['Isquiotibiais', 'Quadríceps', 'Adutor Magno'],
-    equipmentNeeded: 'Barra Olímpica + Banco + Protetor de Barra',
+    equipmentNeeded: 'Barra Olímpica + Banco + Protetor',
     difficulty: 'Intermediário',
     activationLevel: 100,
-    tempo: '2-1-1-1 (segurar 1s no topo)',
+    tempo: '2-1-1-1',
     steps: {
       setup: [
-        'Apoie as escápulas (borda inferior) contra um banco firme.',
-        'Role a barra carregada (com protetor) sobre o quadril.',
-        'Posicione os pés no chão de modo que as canelas fiquem verticais (90°) no topo do movimento.',
+        'Apoie a parte inferior das escápulas na borda de um banco firme.',
+        'Posicione a barra estofada diretamente sobre o quadril.',
+        'Manter as canelas na vertical a 90° no topo do movimento.',
       ],
       execution: [
-        'Empurre pelos calcanhares e eleve o quadril estendendo-o totalmente.',
-        'No topo, esprema os glúteos com força máxima mantendo o queixo recolhido contra o peito.',
-        'Desça o quadril de forma controlada sem desengajar o core.',
+        'Empurre pelos calcanhares e eleve o quadril estendendo-o por completo.',
+        'Esprema os glúteos fortemente no topo por 1 segundo.',
+        'Desça o quadril sob controle.',
       ],
-      breathing: 'Inspire na descida e expire fortemente ao contrair os glúteos no topo.',
+      breathing: 'Inspire na descida e expire forte na contração do topo.',
       mistakes: [
-        'Hiperestender a lombar no topo (o movimento deve vir puramente da extensão do quadril).',
-        'Pés muito distantes ou muito próximos do banco.',
+        'Hiperestender a lombar no topo do movimento.',
       ],
     },
     proTips: [
-      'Mantenha os olhos voltados para a frente (não olhe para o teto) para evitar a hiperestensão da coluna lombar.',
+      'Mantenha o queixo junto ao peito durante todo o trajeto.',
     ],
   },
 
@@ -196,66 +258,69 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     id: 'desenvolvimento',
     name: 'Desenvolvimento com Halteres',
     category: 'ombros',
+    motionType: 'overhead_press',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shoulder_Press/0.jpg',
+    ],
     primaryMuscles: ['Deltoide Anterior', 'Deltoide Lateral'],
     secondaryMuscles: ['Tríceps Braquial', 'Trapézio Superior'],
-    equipmentNeeded: 'Halteres + Banco a 75-80°',
+    equipmentNeeded: 'Halteres + Banco Ajustável',
     difficulty: 'Intermediário',
     activationLevel: 88,
     tempo: '2-0-1-0',
     steps: {
       setup: [
-        'Ajuste o banco em uma inclinação quase vertical (75-80°).',
-        'Sente-se apoiando as costas firmemente.',
-        'Eleve os halteres na altura das orelhas com os cotovelos apontando levemente para a frente (linha do plano escapular).',
+        'Sente-se no banco ajustado em leve inclinação (75-80°).',
+        'Eleve os halteres na altura das orelhas com cotovelos a 45°.',
       ],
       execution: [
-        'Empurre os halteres para cima em uma trajetória suavemente curva até quase se tocarem no topo.',
-        'Desça sob controle até a altura dos ombros/orelhas.',
+        'Empurre os halteres verticalmente para cima até quase estender os cotovelos.',
+        'Retorne suavemente até a linha dos ombros.',
       ],
-      breathing: 'Inspire na descida e expire ao empurrar para cima.',
-      mistakes: [
-        'Arquear excessivamente a lombar destacando as costas do banco.',
-        'Abater os halteres bruscamente na descida.',
-      ],
+      breathing: 'Inspire na descida e expire ao empurrar.',
+      mistakes: ['Arquear excessivamente a lombar destacando o tronco do encosto.'],
     },
-    proTips: ['Mantenha o core rígido para estabilizar a coluna durante toda a carga.'],
+    proTips: ['Mantenha os antebraços sempre na vertical sob a carga.'],
   },
 
   rosca_direta: {
     id: 'rosca_direta',
     name: 'Rosca Direta com Barra',
     category: 'biceps',
-    primaryMuscles: ['Bíceps Braquial (Cabeça Longa e Curta)'],
+    motionType: 'bicep_curl',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg',
+    ],
+    primaryMuscles: ['Bíceps Braquial'],
     secondaryMuscles: ['Braquial', 'Braquiorradial'],
-    equipmentNeeded: 'Barra Reta ou Barra W',
+    equipmentNeeded: 'Barra W / Barra Reta',
     difficulty: 'Iniciante',
     activationLevel: 90,
     tempo: '2-0-1-1',
     steps: {
       setup: [
-        'Fique em pé com postura ereta, pés na largura dos ombros.',
-        'Segure a barra com pegada supina (palmas para cima) na largura dos ombros.',
-        'Mantenha os cotovelos colados ao lado do tronco.',
+        'Mantenha a postura ereta e os pés alinhados com os ombros.',
+        'Segure a barra com as palmas para cima e cotovelos junto ao corpo.',
       ],
       execution: [
-        'Flexione os cotovelos elevando a barra em direção aos ombros sem mover os cotovelos para a frente.',
-        'Esprema o bíceps no pico da contração.',
-        'Desça a barra lentamente até a extensão quase completa dos braços.',
+        'Flexione os cotovelos elevando a barra sem projetar os cotovelos para a frente.',
+        'Concontraia o bíceps no topo e desça devagar.',
       ],
-      breathing: 'Expire ao subir a barra e inspire na descida.',
-      mistakes: [
-        'Usar balanço do tronco (roubo) para iniciar a subida.',
-        'Avançar os cotovelos tirando a tensão do bíceps.',
-      ],
+      breathing: 'Expire na subida e inspire na descida.',
+      mistakes: ['Usar o balanço do quadril/tronco para subir o peso.'],
     },
-    proTips: ['Use a Barra W se sentir desconforto nos pulsos com a barra reta.'],
+    proTips: ['Mantenha os cotovelos fixos como pivôs nas laterais do corpo.'],
   },
 
   testa: {
     id: 'testa',
-    name: 'Extensão Testa com Barra (Skullcrusher)',
+    name: 'Extensão Testa com Barra',
     category: 'triceps',
-    primaryMuscles: ['Tríceps Braquial (Cabeça Longa, Lateral e Medial)'],
+    motionType: 'tricep_extension',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ_Bar_Lying_Triceps_Extension/0.jpg',
+    ],
+    primaryMuscles: ['Tríceps Braquial (Todas as cabeças)'],
     secondaryMuscles: ['Ancôneo'],
     equipmentNeeded: 'Barra W + Banco Reto',
     difficulty: 'Intermediário',
@@ -263,59 +328,142 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     tempo: '3-0-1-0',
     steps: {
       setup: [
-        'Deite-se no banco com uma barra W nas mãos.',
-        'Estenda os braços para cima, inclinando-os ligeiramente para trás em relação à vertical (para manter tensão constante).',
+        'Deite no banco e mantenha os braços estendidos ligeiramente inclinados para trás.',
       ],
       execution: [
-        'Flexione apenas os cotovelos baixando a barra em direção à testa/topo da cabeça.',
-        'Mantenha os cotovelos apontados para o teto e imóveis.',
-        'Empurre a barra de volta à posição inicial contraindo o tríceps.',
+        'Flexione somente os cotovelos levando a barra em direção ao topo da cabeça.',
+        'Empurre a barra de volta estendendo o tríceps.',
       ],
       breathing: 'Inspire na descida e expire ao estender os cotovelos.',
-      mistakes: ['Abrir os cotovelos para as laterais.', 'Mover os ombros junto com o movimento.'],
+      mistakes: ['Abrir os cotovelos para as laterais durante a flexão.'],
     },
-    proTips: ['Baixe a barra um pouco atrás da cabeça para aumentar a amplitude e proteger os cotovelos.'],
+    proTips: ['Mantenha os braços levemente inclinados para trás para manter a tensão ativa.'],
+  },
+
+  leg_press: {
+    id: 'leg_press',
+    name: 'Leg Press 45°',
+    category: 'pernas',
+    motionType: 'squat',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg',
+    ],
+    primaryMuscles: ['Quadríceps'],
+    secondaryMuscles: ['Glúteo Máximo', 'Isquiotibiais'],
+    equipmentNeeded: 'Máquina Leg Press 45°',
+    difficulty: 'Iniciante',
+    activationLevel: 88,
+    tempo: '3-0-1-0',
+    steps: {
+      setup: ['Apoie as costas por completo no encosto e apoie os pés no centro da plataforma.'],
+      execution: ['Destrave a plataforma e flexione os joelhos a 90°.', 'Empurre pelos calcanhares sem travar os joelhos.'],
+      breathing: 'Inspire ao recolher as pernas e expire ao empurrar.',
+      mistakes: ['Tirar a lombar do banco no ponto mais baixo.'],
+    },
+    proTips: ['Posicione os pés levemente mais altos para enfatizar os glúteos.'],
+  },
+
+  remada_curvada: {
+    id: 'remada_curvada',
+    name: 'Remada Curvada com Barra',
+    category: 'costas',
+    motionType: 'pull_up',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg',
+    ],
+    primaryMuscles: ['Latíssimo do Dorso', 'Romboides'],
+    secondaryMuscles: ['Bíceps Braquial', 'Deltoide Posterior', 'Eretores'],
+    equipmentNeeded: 'Barra Olímpica',
+    difficulty: 'Intermediário',
+    activationLevel: 90,
+    tempo: '2-1-1-0',
+    steps: {
+      setup: ['Incline o tronco a 45° mantendo a lombar neutra e joelhos semi-flexionados.'],
+      execution: ['Puxe a barra em direção ao umbigo espremendo as costas.'],
+      breathing: 'Expire na puxada e inspire ao descer a barra.',
+      mistakes: ['Arredondar a coluna lombar.'],
+    },
+    proTips: ['Puxe com os cotovelos raspando ao lado das costelas.'],
+  },
+
+  elevacao_lateral: {
+    id: 'elevacao_lateral',
+    name: 'Elevação Lateral com Halteres',
+    category: 'ombros',
+    motionType: 'overhead_press',
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg',
+    ],
+    primaryMuscles: ['Deltoide Lateral'],
+    secondaryMuscles: ['Deltoide Anterior', 'Trapézio Superior'],
+    equipmentNeeded: 'Halteres',
+    difficulty: 'Iniciante',
+    activationLevel: 85,
+    tempo: '2-1-2-0',
+    steps: {
+      setup: ['Segure os halteres nas laterais do corpo com cotovelos levemente dobrados.'],
+      execution: ['Eleve os braços lateralmente até a linha dos ombros.', 'Desça de forma lenta.'],
+      breathing: 'Expire ao subir e inspire na descida.',
+      mistakes: ['Balançar o corpo para usar impulso.'],
+    },
+    proTips: ['Lidere a subida pelos cotovelos, não pelas mãos.'],
   },
 };
 
-// Helper para obter ou gerar guia genérico se não estiver explicitamente mapeado
 export function getExerciseGuide(exerciseId: string, exerciseName: string, muscleGroups: string[]): ExerciseGuide {
   if (EXERCISE_GUIDES[exerciseId]) {
     return EXERCISE_GUIDES[exerciseId];
   }
 
-  // Generates intelligent fallback details based on muscle group
+  const normalizedName = exerciseName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  for (const [key, guide] of Object.entries(EXERCISE_GUIDES)) {
+    const normalizedGuide = guide.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (normalizedGuide.includes(normalizedName.split(' ')[0]) || normalizedName.includes(normalizedGuide.split(' ')[0])) {
+      return guide;
+    }
+  }
+
   const primary = muscleGroups[0] || 'musculatura';
-  const category = (primary as ExerciseGuide['category']) || 'peito';
+  const categoryMap: Record<string, ExerciseGuide['category']> = {
+    peito: 'peito', peitoral: 'peito', chest: 'peito',
+    costas: 'costas', dorsal: 'costas', back: 'costas',
+    pernas: 'pernas', legs: 'pernas', quadriceps: 'pernas',
+    ombros: 'ombros', shoulder: 'ombros', deltoides: 'ombros',
+    biceps: 'biceps', bicep: 'biceps',
+    triceps: 'triceps', tricep: 'triceps',
+    gluteos: 'gluteos', glutes: 'gluteos',
+    core: 'core', abdomen: 'core', abs: 'core',
+  };
+  const category = categoryMap[primary.toLowerCase()] ?? 'peito';
+
+  let motionType: ExerciseGuide['motionType'] = 'generic';
+  if (category === 'pernas' || category === 'gluteos') motionType = 'squat';
+  else if (category === 'peito') motionType = 'bench_press';
+  else if (category === 'costas') motionType = 'pull_up';
+  else if (category === 'ombros') motionType = 'overhead_press';
+  else if (category === 'biceps') motionType = 'bicep_curl';
+  else if (category === 'triceps') motionType = 'tricep_extension';
 
   return {
     id: exerciseId,
     name: exerciseName,
-    category: category,
+    category,
+    motionType,
+    gifUrls: [
+      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg'
+    ],
     primaryMuscles: muscleGroups.map(m => m.toUpperCase()),
-    secondaryMuscles: ['Estabilizadores do Core', 'Músculos Sinergistas'],
-    equipmentNeeded: 'Equipamento padrão de academia / Peso corporal',
+    secondaryMuscles: ['Estabilizadores do Core', 'Sinergistas'],
+    equipmentNeeded: 'Equipamento padrão de academia',
     difficulty: 'Intermediário',
     activationLevel: 85,
-    tempo: '2-0-1-0 (2s excêntrico, 1s concêntrico)',
+    tempo: '2-0-1-0',
     steps: {
-      setup: [
-        `Prepare o posicionamento inicial mantendo a postura ereta e o core ativado.`,
-        `Ajuste a pegada ou apoio de acordo com a sua amplitude anatômica ideal.`,
-      ],
-      execution: [
-        `Inicie o movimento focando na contração da musculatura de ${primary}.`,
-        `Realize a fase excêntrica de forma controlada sem deixar o peso cair.`,
-        `Retorne à posição inicial mantendo constante tensão muscular.`,
-      ],
-      breathing: `Inspire na fase de menor esforço e expire durante o momento de força máxima.`,
-      mistakes: [
-        `Realizar repetições parciais por excesso de carga.`,
-        `Perder o alinhamento da postura e estabilização do core durante a série.`,
-      ],
+      setup: [`Prepare o posicionamento alinhando a postura e ativando o core.`],
+      execution: [`Realize a fase excêntrica de forma controlada e suba com pressão constante.`],
+      breathing: `Inspire no menor esforço e expire no pico de força.`,
+      mistakes: [`Perder o alinhamento corporal durante as repetições.`],
     },
-    proTips: [
-      `Foque na conexão mente-músculo: sinta o trabalho de ${primary} em cada repetição.`,
-    ],
+    proTips: [`Mantenha o foco constante na musculatura de ${primary}.`],
   };
 }

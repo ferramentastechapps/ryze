@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview — Guia Anatômico Ryze 3D</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Bebas+Neue&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --accent-lime: #C8FF00;
+      --accent-orange: #FF5F1F;
+      --accent-cyan: #00D4FF;
+      --bg-base: #06060C;
+      --bg-card: #0C0C16;
+      --bg-elevated: #121220;
+      --text-primary: #FFFFFF;
+      --text-secondary: #A0A0B8;
+      --text-muted: #606078;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --radius-xl: 18px;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal {
+      width: 100%;
+      max-width: 650px;
+      background: #090912;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 24px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.85), 0 0 60px rgba(255,95,31,0.12);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.015);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 9999px;
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .badge-orange { background: rgba(255,95,31,0.15); color: #FF5F1F; border: 1px solid rgba(255,95,31,0.35); }
+    .badge-red { background: rgba(248,113,113,0.15); color: #f87171; border: 1px solid rgba(248,113,113,0.35); }
+    .badge-muted { background: rgba(255,255,255,0.05); color: #A0A0B8; border: 1px solid rgba(255,255,255,0.08); }
+
+    .exercise-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      font-weight: 800;
+      color: #FFFFFF;
+      line-height: 1.1;
+      letter-spacing: 0.02em;
+      margin: 6px 0 4px;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 0 22px;
+      background: rgba(0,0,0,0.3);
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 18px;
+      border: none;
+      border-bottom: 2px solid transparent;
+      background: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: #FFFFFF;
+      border-bottom-color: #FF5F1F;
+      font-weight: 800;
+    }
+
+    .modal-body {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    /* Motion Engine Container */
+    .motion-container {
+      background: #06060C;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .motion-stage {
+      height: 250px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      background: radial-gradient(ellipse at center, rgba(255,95,31,0.06) 0%, rgba(8,8,14,0.98) 100%);
+    }
+
+    .phase-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 9999px;
+      background: rgba(8,8,14,0.85);
+      border: 1px solid rgba(255,95,31,0.4);
+      font-size: 11px;
+      font-weight: 800;
+      color: #FF5F1F;
+    }
+
+    .pulse-dot {
+      width: 8px; height: 8px; border-radius: 50%; background: #FF5F1F;
+      animation: pulse 1.2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 10px #FF5F1F; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+
+    /* Muscle Map 3D */
+    .muscle-map {
+      padding: 16px 18px;
+      background: rgba(12,12,22,0.95);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px;
+    }
+
+    .view-toggle {
+      display: flex;
+      gap: 4px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 14px;
+    }
+
+    .view-btn {
+      flex: 1;
+      padding: 8px 0;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .view-btn.active {
+      background: #FF5F1F;
+      color: #08080E;
+    }
+
+    .map-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .svg-stage {
+      background: radial-gradient(ellipse at center, rgba(255,255,255,0.03) 0%, rgba(0,0,0,0.5) 100%);
+      border-radius: 14px;
+      padding: 10px;
+      border: 1px solid rgba(255,95,31,0.15);
+      min-height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .muscle-card {
+      padding: 10px 12px;
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+
+    .muscle-card.primary {
+      background: rgba(255,95,31,0.12);
+      border-left: 3px solid #FF5F1F;
+    }
+
+    .muscle-card.secondary {
+      background: rgba(0,212,255,0.08);
+      border-left: 3px solid #00D4FF;
+    }
+
+    .close-btn {
+      width: 100%;
+      padding: 14px 24px;
+      border-radius: 14px;
+      background: #FF5F1F;
+      color: #08080E;
+      border: none;
+      font-weight: 900;
+      font-size: 14px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal">
+    <!-- HEADER -->
+    <div class="modal-header">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+        <div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+            <span class="badge badge-orange">PERNAS</span>
+            <span class="badge badge-red">Avançado</span>
+            <span class="badge badge-muted">⚡ 98% Ativação Muscular</span>
+          </div>
+          <div class="exercise-title">Agachamento Livre com Barra</div>
+          <div style="font-size:12px;color:var(--text-muted);font-weight:600">🏋️ Barra Olímpica + RACK de Agachamento</div>
+        </div>
+        <button style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:var(--text-secondary);cursor:pointer;font-size:18px">×</button>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active">📊 Demonstração & Anatômico 3D</button>
+      <button class="tab">📖 Passo a Passo</button>
+      <button class="tab">⚠️ Erros & Dicas Pro</button>
+    </div>
+
+    <!-- BODY -->
+    <div class="modal-body">
+      <!-- Motion Engine -->
+      <div class="motion-container">
+        <div class="motion-stage">
+          <div class="phase-badge">
+            <span class="pulse-dot"></span>
+            Fase: Concêntrica (Subida de Força)
+          </div>
+          <svg width="220" height="240" viewBox="0 0 200 220" id="motion-svg">
+            <circle cx="100" cy="110" r="95" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="2" stroke-dasharray="4 4" />
+            <!-- Barbell -->
+            <line x1="50" y1="52" x2="150" y2="52" stroke="#E2E8F0" stroke-width="6" stroke-linecap="round" />
+            <rect x="42" y="42" width="12" height="20" rx="3" fill="#FF5F1F" />
+            <rect x="146" y="42" width="12" height="20" rx="3" fill="#FF5F1F" />
+            <!-- Head & Torso -->
+            <circle cx="100" cy="45" r="13" fill="#F8FAFC" />
+            <path d="M100 58 L100 115" stroke="#CBD5E1" stroke-width="12" stroke-linecap="round" />
+            <!-- Quadriceps Glowing Highlight -->
+            <circle cx="100" cy="110" r="22" fill="#FF5F1F" opacity="0.8" style="filter:blur(5px)" />
+            <!-- Thighs -->
+            <path d="M100 115 L68 150 L80 190" fill="none" stroke="#F1F5F9" stroke-width="9" stroke-linecap="round" />
+            <path d="M100 115 L132 150 L120 190" fill="none" stroke="#F1F5F9" stroke-width="9" stroke-linecap="round" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- Muscle Map 3D -->
+      <div class="muscle-map">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:800;color:var(--text-muted);margin-bottom:12px">
+          <span>🎯 MAPA ANATÔMICO 3D (RECRUTAMENTO)</span>
+          <span style="color:#FF5F1F">98% ATIVAÇÃO</span>
+        </div>
+        <div class="view-toggle">
+          <button class="view-btn active" onclick="switchView('front',this)">Vista Anterior (Frente)</button>
+          <button class="view-btn" onclick="switchView('back',this)">Vista Posterior (Costas)</button>
+        </div>
+        <div class="map-grid">
+          <div class="svg-stage" id="svg-stage">
+            <!-- ANATOMICAL SVG -->
+            <svg viewBox="0 0 200 420" style="width:100%;max-height:300px;filter:drop-shadow(0 10px 20px rgba(0,0,0,0.6))">
+              <!-- Body contour base -->
+              <g stroke="rgba(255,255,255,0.08)" stroke-width="1" fill="#1A1A28">
+                <path d="M100 12 C110 12 118 20 118 32 C118 44 110 50 106 52 L106 62 L94 62 L94 52 C90 50 82 44 82 32 C82 20 90 12 100 12 Z" />
+                <path d="M94 62 L74 68 L50 88 L38 135 L42 180 L52 180 L56 142 L66 122 L68 185 L74 240 L70 320 L78 395 L96 395 L96 280 L100 240 L104 280 L104 395 L122 395 L130 320 L126 240 L132 185 L134 122 L144 142 L148 180 L158 180 L162 135 L150 88 L126 68 L106 62 Z" />
+              </g>
+              <!-- QUADRÍCEPS HIGHLIGHTED NEON ORANGE -->
+              <g style="filter:drop-shadow(0 0 8px #FF5F1F)">
+                <path d="M72 186 C68 210 70 245 74 265 C86 268 96 260 96 235 C98 210 94 186 86 182 Z" fill="#FF5F1F" opacity="0.95" stroke="#FF5F1F" stroke-width="0.5" />
+                <path d="M128 186 C132 210 130 245 126 265 C114 268 104 260 104 235 C102 210 106 186 114 182 Z" fill="#FF5F1F" opacity="0.95" stroke="#FF5F1F" stroke-width="0.5" />
+              </g>
+              <!-- ADUTORES HIGHLIGHTED CYAN -->
+              <g style="filter:drop-shadow(0 0 6px #00D4FF)">
+                <path d="M88 184 L96 184 L96 230 L90 220 Z" fill="#00D4FF" opacity="0.75" />
+                <path d="M112 184 L104 184 L104 230 L110 220 Z" fill="#00D4FF" opacity="0.75" />
+              </g>
+            </svg>
+          </div>
+          <div>
+            <div class="muscle-card primary">
+              <div style="font-size:10px;font-weight:800;color:#FF5F1F">🔥 ALVO PRINCIPAL</div>
+              <div style="font-size:13px;font-weight:800;color:#FFF;margin-top:2px">Quadríceps (Vasto Lat/Med)</div>
+              <div style="font-size:11px;font-weight:700;color:var(--text-secondary)">Glúteo Máximo</div>
+            </div>
+            <div class="muscle-card secondary">
+              <div style="font-size:10px;font-weight:800;color:#00D4FF">⚡ SINERGISTAS</div>
+              <div style="font-size:11px;color:var(--text-secondary);font-weight:600">• Isquiotibiais</div>
+              <div style="font-size:11px;color:var(--text-secondary);font-weight:600">• Eretores da Espinha</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="padding:14px 22px;border-top:1px solid rgba(255,255,255,0.08);background:rgba(0,0,0,0.35)">
+      <button class="close-btn">✓ Entendi! Fechar Guia</button>
+    </div>
+  </div>
+
+  <script>
+    function switchView(view, btn) {
+      document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+  </script>
+</body>
+</html>
