@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js';
 import type { UserProfile_Auth, AccessStatus } from '../types/supabase';
 import { getOrCreateProfile, onAuthStateChange } from '../services/authService';
 import { getAccessStatus } from '../services/subscriptionService';
+import { supabase } from '../services/supabase';
 
 interface AuthStore {
   // State
@@ -36,8 +37,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthLoading: (loading) => set({ authLoading: loading }),
 
   initialize: () => {
-    const unsubscribe = onAuthStateChange(async (user) => {
+    const loadSession = async (user: User | null) => {
       if (!user) {
+        // Se a URL contém token OAuth em processamento, aguardamos o Supabase extrair o hash
+        const hasOAuthTokenInUrl =
+          window.location.hash.includes('access_token') ||
+          window.location.search.includes('code=');
+
+        if (hasOAuthTokenInUrl) {
+          console.log('[AuthStore] OAuth token em processamento na URL, mantendo tela de carregamento...');
+          return;
+        }
+
         set({
           user: null,
           authProfile: null,
@@ -52,6 +63,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       try {
         const profile = await getOrCreateProfile(user);
         const status = getAccessStatus(profile);
+
+        // Limpa a hash do OAuth da URL após autenticação bem sucedida
+        if (window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+
         set({
           user,
           authProfile: profile,
@@ -59,7 +76,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           authLoading: false,
         });
       } catch (err) {
-        console.error('Error loading auth profile:', err);
+        console.error('[AuthStore] Error loading auth profile:', err);
         const trialStart = new Date();
         const trialEnd = new Date();
         trialEnd.setDate(trialEnd.getDate() + 30);
@@ -81,6 +98,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           authLoading: false,
         });
       }
+    };
+
+    // Verificação de sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadSession(session.user);
+      }
+    });
+
+    // Escuta eventos de login/logout no Supabase Auth
+    const unsubscribe = onAuthStateChange(async (user) => {
+      loadSession(user);
     });
 
     return unsubscribe;
@@ -94,3 +123,4 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     set({ authProfile: profile, accessStatus: status });
   },
 }));
+
