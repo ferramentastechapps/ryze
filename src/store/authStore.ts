@@ -37,8 +37,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
   initialize: () => {
     const unsubscribe = onAuthStateChange(async (user) => {
-      set({ user, authLoading: true });
-
       if (!user) {
         set({
           user: null,
@@ -49,17 +47,39 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         return;
       }
 
+      set({ user, authLoading: true });
+
       try {
         const profile = await getOrCreateProfile(user);
         const status = getAccessStatus(profile);
         set({
+          user,
           authProfile: profile,
           accessStatus: status,
           authLoading: false,
         });
       } catch (err) {
         console.error('Error loading auth profile:', err);
-        set({ accessStatus: 'unauthenticated', authLoading: false });
+        const trialStart = new Date();
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 30);
+        const fallbackProfile: UserProfile_Auth = {
+          id: user.id,
+          email: user.email ?? null,
+          full_name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? null,
+          avatar_url: user.user_metadata?.avatar_url ?? user.user_metadata?.picture ?? null,
+          trial_start_date: trialStart.toISOString(),
+          trial_end_date: trialEnd.toISOString(),
+          subscription_status: 'trial',
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+        };
+        set({
+          user,
+          authProfile: fallbackProfile,
+          accessStatus: 'trial',
+          authLoading: false,
+        });
       }
     });
 

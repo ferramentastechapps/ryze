@@ -1,19 +1,37 @@
 import { signInWithGoogle } from '../services/authService';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TermsPrivacyModal from '../components/TermsPrivacyModal';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [modalTab, setModalTab] = useState<'terms' | 'privacy' | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
+
+  useEffect(() => {
+    // Detect error returned in URL query string or hash from OAuth redirect
+    const searchParams = new URLSearchParams(window.location.search);
+    const hashStr = window.location.hash.startsWith('#') ? window.location.hash.substring(1) : window.location.hash;
+    const hashParams = new URLSearchParams(hashStr);
+
+    const errDesc = searchParams.get('error_description') || hashParams.get('error_description');
+    const errCode = searchParams.get('error') || hashParams.get('error');
+
+    if (errDesc || errCode) {
+      const msg = errDesc || errCode || 'Erro desconhecido ao autenticar com o Google';
+      console.error('[AuthPage] OAuth redirect error:', msg);
+      setError(`Erro no retorno do Google: ${decodeURIComponent(msg)}`);
+    }
+  }, []);
 
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
       setError('');
       await signInWithGoogle();
-    } catch (err) {
-      setError('Erro ao entrar com Google. Tente novamente.');
+    } catch (err: any) {
+      console.error('[AuthPage] signInWithGoogle error:', err);
+      setError(err?.message || 'Erro ao entrar com Google. Tente novamente.');
       setLoading(false);
     }
   };
@@ -233,6 +251,43 @@ export default function AuthPage() {
               Privacidade
             </button>.
           </p>
+
+          {/* Diagnostic Button */}
+          <button
+            onClick={() => setShowDebug(!showDebug)}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--text-muted)',
+              fontSize: 11,
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              marginTop: 4,
+            }}
+          >
+            {showDebug ? 'Ocultar Diagnóstico' : '🔍 Diagnóstico de Conexão'}
+          </button>
+
+          {showDebug && (
+            <div style={{
+              width: '100%',
+              background: 'rgba(0,0,0,0.4)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 8,
+              padding: 12,
+              fontSize: 11,
+              fontFamily: 'monospace',
+              color: 'var(--text-secondary)',
+              wordBreak: 'break-all',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}>
+              <div><strong>Origem Atual:</strong> {window.location.origin}</div>
+              <div><strong>URL Completa:</strong> {window.location.href}</div>
+              {error && <div style={{ color: '#FF5F1F' }}><strong>Erro Registrado:</strong> {error}</div>}
+            </div>
+          )}
         </div>
       </div>
 
