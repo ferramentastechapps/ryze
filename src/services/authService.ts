@@ -87,11 +87,11 @@ export async function getOrCreateProfile(user: User): Promise<UserProfile_Auth> 
 
 // ─── Listen to auth state changes ─────────────────────────────────────────────
 export function onAuthStateChange(
-  callback: (user: User | null) => void
+  callback: (event: string, user: User | null) => void
 ): () => void {
   const { data: { subscription } } = supabase.auth.onAuthStateChange(
-    (_event, session) => {
-      callback(session?.user ?? null);
+    (event, session) => {
+      callback(event, session?.user ?? null);
     }
   );
 

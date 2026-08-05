@@ -63,19 +63,21 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthLoading: (loading) => set({ authLoading: loading }),
 
   initialize: () => {
-    // Detectar se há token OAuth na URL (fluxo implicit pós-redirect do Google)
+    // Se há token OAuth na URL (fluxo implicit pós-redirect do Google)
+    // precisamos deixar o Supabase processar o hash antes de decidir o estado
     const hasTokenInHash = window.location.hash.includes('access_token');
 
-    // Único ponto de verdade: onAuthStateChange do Supabase
-    // O Supabase processa o hash da URL automaticamente antes de emitir o evento
-    const unsubscribe = onAuthStateChange(async (user) => {
-      console.log('[AuthStore] onAuthStateChange user:', user?.email ?? 'null');
+    const unsubscribe = onAuthStateChange(async (event, user) => {
+      console.log('[AuthStore] auth event:', event, '| user:', user?.email ?? 'null');
 
       if (!user) {
-        // Limpar hash de erro/token inválido da URL
-        if (window.location.hash.includes('access_token') || window.location.hash.includes('error')) {
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+        // INITIAL_SESSION com null + token na URL = Supabase ainda está processando o hash
+        // Não fazer nada: o evento SIGNED_IN vai vir em seguida com o user
+        if (event === 'INITIAL_SESSION' && hasTokenInHash) {
+          console.log('[AuthStore] Aguardando processamento do token OAuth na URL...');
+          return;
         }
+
         set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
         return;
       }
@@ -92,16 +94,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ user, authProfile: profile, accessStatus: status, authLoading: false });
     });
 
-    // Se NÃO há token na URL (sessão normal, não redirect OAuth),
-    // precisamos do getSession() para inicializar o estado.
-    // Se HÁ token na URL, o onAuthStateChange vai disparar automaticamente.
+    // Se NÃO há token na URL (acesso normal), getSession() define o estado inicial.
+    // Se HÁ token na URL, o Supabase vai emitir SIGNED_IN via onAuthStateChange automaticamente.
     if (!hasTokenInHash) {
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (!session?.user) {
-          // Não tem sessão ativa e não é redirect OAuth → vai pro login
           set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
         }
-        // Se tem sessão, o onAuthStateChange já vai tratar
       });
     }
 
