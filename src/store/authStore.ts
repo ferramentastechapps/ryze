@@ -37,18 +37,12 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthLoading: (loading) => set({ authLoading: loading }),
 
   initialize: () => {
-    const loadSession = async (user: User | null) => {
+    const handleAuthUser = async (user: User | null) => {
       if (!user) {
-        // Se a URL contém token OAuth em processamento, aguardamos o Supabase extrair o hash
-        const hasOAuthTokenInUrl =
-          window.location.hash.includes('access_token') ||
-          window.location.search.includes('code=');
-
-        if (hasOAuthTokenInUrl) {
-          console.log('[AuthStore] OAuth token em processamento na URL, mantendo tela de carregamento...');
-          return;
+        // Se a sessão é nula e havia hash expirado/inválido na URL, limpa a URL para permitir novo login
+        if (window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
-
         set({
           user: null,
           authProfile: null,
@@ -100,16 +94,17 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       }
     };
 
-    // Verificação de sessão inicial
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        loadSession(session.user);
+    // Verificação de sessão inicial do Supabase
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('[AuthStore] getSession error:', error);
       }
+      handleAuthUser(session?.user ?? null);
     });
 
     // Escuta eventos de login/logout no Supabase Auth
     const unsubscribe = onAuthStateChange(async (user) => {
-      loadSession(user);
+      handleAuthUser(user);
     });
 
     return unsubscribe;
