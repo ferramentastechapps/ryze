@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles } from 'lucide-react';
+import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles, LogOut } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout } from '../types';
 import { getTodayWorkout, getProgressStats } from '../store/appStore';
 import { loadAICoach } from '../services/geminiService';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
 import CoachTipModal from '../components/CoachTipModal';
+import SubscriptionBadge from '../components/SubscriptionBadge';
+import { useAuthStore } from '../store/authStore';
+import { signOut } from '../services/authService';
 
 interface DashboardProps {
   state: AppState;
@@ -97,9 +100,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
       <div style={{ position: 'relative', zIndex: 1 }}>
         <div className="container" style={{ paddingBottom: 40 }}>
           {/* Header Brand */}
-          <div style={{ paddingTop: 16, paddingBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <img src="/logo-capa.png" alt="RYZE" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
-          </div>
+          <DashboardHeader />
 
           {/* Greeting */}
           <div className="animate-fade-in" style={{ paddingTop: 16, paddingBottom: 32 }}>
@@ -593,6 +594,71 @@ function Stat({ label, value }: { label: string; value: string }) {
       </div>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
         {label}
+      </div>
+    </div>
+  );
+}
+
+// ─── Dashboard Header with User Avatar + Badge ────────────────────────────────
+function DashboardHeader() {
+  const { authProfile, user } = useAuthStore();
+
+  const handleSignOut = async () => {
+    try { await signOut(); } catch (e) { console.error(e); }
+  };
+
+  return (
+    <div style={{ paddingTop: 16, paddingBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <img src="/logo-capa.png" alt="RYZE" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SubscriptionBadge />
+
+        {/* User avatar */}
+        {authProfile?.avatar_url ? (
+          <img
+            src={authProfile.avatar_url}
+            alt={authProfile.full_name ?? 'User'}
+            style={{
+              width: 32, height: 32,
+              borderRadius: '50%',
+              border: '2px solid var(--border-subtle)',
+              objectFit: 'cover',
+            }}
+          />
+        ) : (
+          <div style={{
+            width: 32, height: 32,
+            borderRadius: '50%',
+            background: 'var(--bg-elevated)',
+            border: '2px solid var(--border-subtle)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 700, color: 'var(--accent-lime)',
+          }}>
+            {(user?.email ?? 'U')[0].toUpperCase()}
+          </div>
+        )}
+
+        {/* Logout */}
+        <button
+          onClick={handleSignOut}
+          title="Sair"
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-muted)',
+            cursor: 'pointer',
+            padding: 4,
+            display: 'flex',
+            alignItems: 'center',
+            borderRadius: 8,
+            transition: 'color 0.2s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          <LogOut size={16} />
+        </button>
       </div>
     </div>
   );
