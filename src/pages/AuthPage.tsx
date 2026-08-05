@@ -1,9 +1,11 @@
 import { signInWithGoogle } from '../services/authService';
 import { useState } from 'react';
+import TermsPrivacyModal from '../components/TermsPrivacyModal';
 
 export default function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [modalTab, setModalTab] = useState<'terms' | 'privacy' | null>(null);
 
   const handleGoogleLogin = async () => {
     try {
@@ -112,7 +114,7 @@ export default function AuthPage() {
               lineHeight: 1.6,
               fontFamily: 'var(--font-body)',
             }}>
-              Treine com IA. Evolua de verdade.
+              IA com embasamento científico.
               <br />
               30 dias grátis, depois R$9,90/mês.
             </p>
@@ -181,7 +183,7 @@ export default function AuthPage() {
             gap: 10,
           }}>
             {[
-              '🤖 Plano personalizado com IA',
+              '🔬 IA com embasamento científico',
               '🏋️ Musculação + Corrida integrados',
               '📊 Acompanhamento de progresso',
               '⚡ Funciona offline (PWA)',
@@ -207,12 +209,39 @@ export default function AuthPage() {
             lineHeight: 1.5,
           }}>
             Ao entrar, você concorda com os{' '}
-            <span style={{ color: 'var(--accent-lime)', cursor: 'pointer' }}>Termos de Uso</span>
+            <button
+              onClick={() => setModalTab('terms')}
+              style={{
+                background: 'none', border: 'none', padding: 0,
+                color: 'var(--accent-lime)', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 'inherit',
+                textDecoration: 'underline',
+              }}
+            >
+              Termos de Uso
+            </button>
             {' '}e{' '}
-            <span style={{ color: 'var(--accent-lime)', cursor: 'pointer' }}>Privacidade</span>.
+            <button
+              onClick={() => setModalTab('privacy')}
+              style={{
+                background: 'none', border: 'none', padding: 0,
+                color: 'var(--accent-lime)', cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 'inherit',
+                textDecoration: 'underline',
+              }}
+            >
+              Privacidade
+            </button>.
           </p>
         </div>
       </div>
+
+      {modalTab && (
+        <TermsPrivacyModal
+          initialTab={modalTab}
+          onClose={() => setModalTab(null)}
+        />
+      )}
 
       <style>{`
         @keyframes spin {
