@@ -28,6 +28,9 @@ export default function AuthPage() {
     try {
       setLoading(true);
       setError('');
+      if (window.location.search.includes('error=')) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
       await signInWithGoogle();
     } catch (err: any) {
       console.error('[AuthPage] signInWithGoogle error:', err);
