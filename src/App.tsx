@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useRyzeStore } from './store/ryzeStore';
 import { useAuthStore } from './store/authStore';
 import Navigation from './components/Navigation';
@@ -25,8 +25,25 @@ function ScrollToTop() {
 }
 
 // ─── Auth Gate: protege rotas com base no status ──────────────────────────────
-function AuthGate({ children }: { children: React.ReactNode }) {
+function AuthGate({ children, isOnboarded }: { children: React.ReactNode; isOnboarded: boolean }) {
   const { accessStatus, authLoading } = useAuthStore();
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+
+  // Redireciona para o app após login bem-sucedido
+  useEffect(() => {
+    if (!authLoading && (accessStatus === 'trial' || accessStatus === 'active')) {
+      // Se o usuário está autenticado e está na raiz /  (landing ou callback OAuth),
+      // redireciona para o destino correto dentro do app
+      if (pathname === '/' || pathname === '') {
+        if (isOnboarded) {
+          navigate('/dashboard', { replace: true });
+        } else {
+          navigate('/anamnese', { replace: true });
+        }
+      }
+    }
+  }, [authLoading, accessStatus, pathname, isOnboarded, navigate]);
 
   if (authLoading) {
     return (
@@ -76,7 +93,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <AuthGate>
+      <AuthGate isOnboarded={isOnboarded}>
         <Routes>
           <Route path="/" element={<Landing isOnboarded={isOnboarded} />} />
           <Route path="/anamnese" element={<Anamnese onComplete={refresh} />} />
