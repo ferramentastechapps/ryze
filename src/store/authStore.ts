@@ -79,16 +79,16 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           const access_token = hashParams.get('access_token');
           const refresh_token = hashParams.get('refresh_token');
 
-          if (access_token && refresh_token) {
+          if (access_token) {
             console.log('[AuthStore] Forçando setSession com tokens da URL...');
             const { data, error } = await supabase.auth.setSession({
               access_token,
-              refresh_token,
+              refresh_token: refresh_token || '',
             });
 
             if (data?.session?.user) {
               console.log('[AuthStore] Sessão estabelecida via setSession com sucesso:', data.session.user.email);
-              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+              window.history.replaceState(null, '', window.location.pathname);
               const { profile, status } = await buildSession(data.session.user);
               set({ user: data.session.user, authProfile: profile, accessStatus: status, authLoading: false });
               return;
