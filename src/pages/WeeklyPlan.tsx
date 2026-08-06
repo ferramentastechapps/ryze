@@ -70,21 +70,6 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
         </div>
 
         {/* Header */}
-        <div className="animate-fade-in" style={{ paddingBottom: 28 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>
-            SEMANA {weekPlan.weekNumber}
-          </div>
-          <h1 className="page-title">PLANO<br />SEMANAL</h1>
-          
-          {/* Week summary badges */}
-          <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
-            <span className="badge badge-orange">
-              <Dumbbell size={11} />
-              {WEEK_DAYS.filter(d => weekPlan.days[d]?.type === 'musculacao').length} musculação
-            </span>
-            <span className="badge badge-cyan">
-              <Activity size={11} />
-              {WEEK_DAYS.filter(d => weekPlan.days[d]?.type === 'corrida').length} corridas
             </span>
             <span className="badge badge-purple">
               <Zap size={11} />

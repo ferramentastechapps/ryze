@@ -498,15 +498,27 @@ export function generateWeekPlan(profile: UserProfile, weekNumber: number = 1): 
   const run11 = buildRunIntervalado11(profile);
 
   // Adaptação por Nível de Experiência em Musculação (Séries & Repetições)
+  // Módulo 5: Semana de Deload Automático (A cada 4ª semana -> weekNumber % 4 === 0)
+  const isDeloadWeek = weekNumber > 0 && weekNumber % 4 === 0;
+
   const adjustWorkoutLevel = (workout: StrengthWorkout): StrengthWorkout => {
     const exercises = workout.exercises.map(ex => {
       let sets = ex.sets;
       if (isBeginner && ex.sets > 3) sets = 3;
       if (isAdvanced && ex.sets < 5 && ex.blockType !== 'aquecimento') sets = ex.sets + 1;
+      
+      // Deload automático: reduz séries em 40% (mínimo 2 séries)
+      if (isDeloadWeek) {
+        sets = Math.max(2, Math.floor(sets * 0.6));
+      }
       return { ...ex, sets };
     });
     return {
       ...workout,
+      title: isDeloadWeek ? `[DELOAD] ${workout.title}` : workout.title,
+      description: isDeloadWeek
+        ? `[SEMANA DE DELOAD] Volume reduzido em 40% para regeneração muscular e articulações. ${workout.description}`
+        : workout.description,
       exercises,
       volume: exercises.reduce((sum, e) => sum + e.sets * 12, 0),
     };
