@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ authLoading: true });
 
       // ── 1. Resgate manual se há token OAuth na URL hash (#access_token=...) ──
-      // Resolve o problema de clock skew (relógio do cliente levemente desalinhado com o servidor Supabase)
+      // Resolve o problema de clock skew e erros de fetch no gotrue-js
       if (hasTokenInHash) {
         try {
           const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
@@ -80,20 +80,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           const refresh_token = hashParams.get('refresh_token');
 
           if (access_token) {
-            console.log('[AuthStore] Forçando setSession com tokens da URL...');
-            const { data, error } = await supabase.auth.setSession({
-              access_token,
-              refresh_token: refresh_token || '',
-            });
+            console.log('[AuthStore] Autenticando com access_token da URL...');
+            // Valida o usuário diretamente com o servidor Supabase via Bearer token
+            const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
 
-            if (data?.session?.user) {
-              console.log('[AuthStore] Sessão estabelecida via setSession com sucesso:', data.session.user.email);
+            if (userData?.user && !userError) {
+              console.log('[AuthStore] Usuário autenticado com sucesso via getUser:', userData.user.email);
+
+              if (refresh_token) {
+                await supabase.auth.setSession({ access_token, refresh_token }).catch(() => {});
+              }
+
               window.history.replaceState(null, '', window.location.pathname);
-              const { profile, status } = await buildSession(data.session.user);
-              set({ user: data.session.user, authProfile: profile, accessStatus: status, authLoading: false });
+              const { profile, status } = await buildSession(userData.user);
+              set({ user: userData.user, authProfile: profile, accessStatus: status, authLoading: false });
               return;
-            } else if (error) {
-              console.warn('[AuthStore] Erro ao definir sessão via setSession:', error.message);
+            } else {
+              console.warn('[AuthStore] Erro ao validar access_token via getUser:', userError?.message);
             }
           }
         } catch (err) {
