@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, CheckCircle2, Clock, XCircle, Search, RefreshCw,
-  ShieldCheck, ArrowLeft, UserCheck, CalendarPlus, Sparkles, UserX
+  ShieldCheck, ArrowLeft, UserCheck, CalendarPlus, UserX
 } from 'lucide-react';
 import { getAllUsers, updateUserStatus, extendUserTrial, toggleAdminRole, type AdminUserMetrics } from '../services/adminService';
 import type { UserProfile_Auth } from '../types/supabase';
@@ -81,222 +81,270 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white p-4 sm:p-8 font-sans pb-24">
-      {/* Top Header */}
-      <div className="max-w-6xl mx-auto mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="p-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white border border-zinc-800 transition"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <ShieldCheck className="w-6 h-6 text-amber-500" />
-              <h1 className="text-2xl font-black tracking-tight">Painel Administrativo</h1>
-            </div>
-            <p className="text-xs text-zinc-400">Gestão central de usuários e assinaturas do RYZE</p>
-          </div>
-        </div>
-
-        <button
-          onClick={fetchUsers}
-          className="flex items-center gap-2 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-300 transition"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </button>
-      </div>
-
-      {actionMessage && (
-        <div className="max-w-6xl mx-auto mb-6 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-sm font-semibold text-center animate-fade-in">
-          {actionMessage}
-        </div>
-      )}
-
-      {/* Metrics Cards */}
-      <div className="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase">Total de Usuários</span>
-            <Users className="w-4 h-4 text-blue-400" />
-          </div>
-          <p className="text-3xl font-black text-white">{metrics.totalUsers}</p>
-        </div>
-
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase">Assinantes Ativos</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          </div>
-          <p className="text-3xl font-black text-emerald-400">{metrics.activeUsers}</p>
-        </div>
-
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase">Em Trial</span>
-            <Clock className="w-4 h-4 text-amber-400" />
-          </div>
-          <p className="text-3xl font-black text-amber-400">{metrics.trialUsers}</p>
-        </div>
-
-        <div className="bg-zinc-900/80 border border-zinc-800 rounded-2xl p-4">
-          <div className="flex items-center justify-between text-zinc-400 mb-2">
-            <span className="text-xs font-bold uppercase">Expirados / Cancelados</span>
-            <XCircle className="w-4 h-4 text-red-400" />
-          </div>
-          <p className="text-3xl font-black text-zinc-500">{metrics.expiredUsers}</p>
-        </div>
-      </div>
-
-      {/* Filters & Search */}
-      <div className="max-w-6xl mx-auto mb-6 flex flex-col sm:flex-row gap-4 justify-between items-center">
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Buscar por nome ou email..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-4 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-          />
-        </div>
-
-        <div className="flex gap-2 w-full sm:w-auto overflow-x-auto">
-          {(['all', 'active', 'trial', 'expired'] as const).map(st => (
+    <div className="page" style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)', paddingBottom: 100 }}>
+      <div className="container" style={{ paddingTop: 20 }}>
+        
+        {/* Top Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold capitalize transition ${
-                statusFilter === st
-                  ? 'bg-amber-500 text-black'
-                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
-              }`}
+              onClick={() => navigate('/dashboard')}
+              className="btn btn-icon btn-ghost"
             >
-              {st === 'all' ? 'Todos' : st}
+              <ArrowLeft size={20} />
             </button>
-          ))}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <ShieldCheck size={24} color="var(--accent-orange)" />
+                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, letterSpacing: '0.04em', margin: 0, lineHeight: 1.1 }}>
+                  PAINEL ADMINISTRATIVO
+                </h1>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
+                Gestão central de usuários e assinaturas do RYZE
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={fetchUsers}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            Atualizar
+          </button>
         </div>
-      </div>
 
-      {/* Users Table */}
-      <div className="max-w-6xl mx-auto bg-zinc-900/80 border border-zinc-800 rounded-2xl overflow-hidden shadow-2xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-zinc-300">
-            <thead className="bg-zinc-950/80 text-zinc-500 uppercase text-[11px] font-bold border-b border-zinc-800">
-              <tr>
-                <th className="p-4">Usuário</th>
-                <th className="p-4">Status de Acesso</th>
-                <th className="p-4">Permissão</th>
-                <th className="p-4 text-right">Ações Rápidas</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/50">
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-zinc-500">
-                    Carregando usuários...
-                  </td>
+        {/* Action Alert Banner */}
+        {actionMessage && (
+          <div style={{
+            padding: '12px 16px',
+            borderRadius: 'var(--radius-md)',
+            background: 'var(--accent-orange-dim)',
+            border: '1px solid var(--accent-orange)',
+            color: 'var(--accent-orange)',
+            fontSize: 13,
+            fontWeight: 700,
+            textAlign: 'center',
+            marginBottom: 20,
+          }}>
+            {actionMessage}
+          </div>
+        )}
+
+        {/* Metrics Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gap: 12,
+          marginBottom: 28,
+        }}>
+          <div className="glass-card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Total Usuários</span>
+              <Users size={18} color="#3b82f6" />
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800 }}>{metrics.totalUsers}</div>
+          </div>
+
+          <div className="glass-card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Ativos VIP</span>
+              <CheckCircle2 size={18} color="var(--accent-lime)" />
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--accent-lime)' }}>{metrics.activeUsers}</div>
+          </div>
+
+          <div className="glass-card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Em Trial</span>
+              <Clock size={18} color="var(--accent-orange)" />
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--accent-orange)' }}>{metrics.trialUsers}</div>
+          </div>
+
+          <div className="glass-card" style={{ padding: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Expirados</span>
+              <XCircle size={18} color="#ef4444" />
+            </div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--text-muted)' }}>{metrics.expiredUsers}</div>
+          </div>
+        </div>
+
+        {/* Filters & Search */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
+          <div style={{ position: 'relative' }}>
+            <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Buscar por nome ou email..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{ paddingLeft: 42, width: '100%' }}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+            {(['all', 'active', 'trial', 'expired'] as const).map(st => (
+              <button
+                key={st}
+                onClick={() => setStatusFilter(st)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-full)',
+                  border: `1px solid ${statusFilter === st ? 'var(--accent-orange)' : 'var(--border-subtle)'}`,
+                  background: statusFilter === st ? 'var(--accent-orange-dim)' : 'var(--bg-card)',
+                  color: statusFilter === st ? 'var(--accent-orange)' : 'var(--text-muted)',
+                  fontFamily: 'var(--font-ui)',
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  textTransform: 'capitalize',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s',
+                }}
+              >
+                {st === 'all' ? 'Todos' : st}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Users List Table Container */}
+        <div className="glass-card" style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border-medium)' }}>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: 13 }}>
+              <thead>
+                <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-subtle)', color: 'var(--text-muted)', fontSize: 11, textTransform: 'uppercase', fontFamily: 'var(--font-ui)', fontWeight: 700 }}>
+                  <th style={{ padding: '14px 16px' }}>Usuário</th>
+                  <th style={{ padding: '14px 16px' }}>Status Acesso</th>
+                  <th style={{ padding: '14px 16px' }}>Cargo</th>
+                  <th style={{ padding: '14px 16px', textAlign: 'right' }}>Ações Rápidas</th>
                 </tr>
-              ) : filteredUsers.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-zinc-500">
-                    Nenhum usuário encontrado com esse filtro.
-                  </td>
-                </tr>
-              ) : (
-                filteredUsers.map(user => (
-                  <tr key={user.id} className="hover:bg-zinc-800/30 transition">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        {user.avatar_url ? (
-                          <img src={user.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover border border-zinc-700" />
-                        ) : (
-                          <div className="w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center font-bold text-amber-400">
-                            {(user.full_name || user.email || 'U')[0].toUpperCase()}
-                          </div>
-                        )}
-                        <div>
-                          <div className="font-bold text-white flex items-center gap-1.5">
-                            {user.full_name || 'Usuário Sem Nome'}
-                            {user.is_admin && (
-                              <span className="bg-amber-500/20 text-amber-300 text-[10px] font-black uppercase px-1.5 py-0.5 rounded border border-amber-500/30">
-                                ADMIN
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-zinc-400">{user.email}</div>
-                        </div>
-                      </div>
-                    </td>
-
-                    <td className="p-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold capitalize ${
-                        user.subscription_status === 'active'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                          : user.subscription_status === 'trial'
-                          ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                          : 'bg-red-500/10 text-red-400 border border-red-500/20'
-                      }`}>
-                        {user.subscription_status === 'active' && <CheckCircle2 className="w-3.5 h-3.5" />}
-                        {user.subscription_status === 'trial' && <Clock className="w-3.5 h-3.5" />}
-                        {user.subscription_status}
-                      </span>
-                    </td>
-
-                    <td className="p-4">
-                      <button
-                        onClick={() => handleToggleAdmin(user.id, !!user.is_admin)}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition ${
-                          user.is_admin
-                            ? 'bg-amber-500/20 border-amber-500/40 text-amber-300 hover:bg-amber-500/30'
-                            : 'bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-white'
-                        }`}
-                      >
-                        {user.is_admin ? 'Admin' : 'Usuário Comum'}
-                      </button>
-                    </td>
-
-                    <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {user.subscription_status !== 'active' && (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'active')}
-                            title="Ativar Acesso Permanente"
-                            className="p-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 transition text-xs font-semibold flex items-center gap-1"
-                          >
-                            <UserCheck className="w-3.5 h-3.5" />
-                            <span>Ativar VIP</span>
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() => handleExtendTrial(user.id)}
-                          title="Estender Trial +30 Dias"
-                          className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 transition text-xs font-semibold flex items-center gap-1"
-                        >
-                          <CalendarPlus className="w-3.5 h-3.5" />
-                          <span>+30d Trial</span>
-                        </button>
-
-                        {user.subscription_status === 'active' && (
-                          <button
-                            onClick={() => handleStatusChange(user.id, 'expired')}
-                            title="Revogar Acesso VIP"
-                            className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 transition text-xs font-semibold flex items-center gap-1"
-                          >
-                            <UserX className="w-3.5 h-3.5" />
-                            <span>Expirar</span>
-                          </button>
-                        )}
-                      </div>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Carregando usuários...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : filteredUsers.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ padding: 32, textAlign: 'center', color: 'var(--text-muted)' }}>
+                      Nenhum usuário encontrado.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredUsers.map(user => (
+                    <tr key={user.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                      <td style={{ padding: '14px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1px solid var(--border-medium)' }} />
+                          ) : (
+                            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-elevated)', border: '1px solid var(--border-medium)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--accent-lime)' }}>
+                              {(user.full_name || user.email || 'U')[0].toUpperCase()}
+                            </div>
+                          )}
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span>{user.full_name || 'Usuário Sem Nome'}</span>
+                              {user.is_admin && (
+                                <span style={{ padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.2)', color: '#f59e0b', fontSize: 9, fontWeight: 900, border: '1px solid rgba(245,158,11,0.3)' }}>
+                                  ADMIN
+                                </span>
+                              )}
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{user.email}</div>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          padding: '4px 10px',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          textTransform: 'capitalize',
+                          background: user.subscription_status === 'active' ? 'var(--accent-lime-dim)' : user.subscription_status === 'trial' ? 'var(--accent-orange-dim)' : 'rgba(239,68,68,0.15)',
+                          color: user.subscription_status === 'active' ? 'var(--accent-lime)' : user.subscription_status === 'trial' ? 'var(--accent-orange)' : '#ef4444',
+                          border: `1px solid ${user.subscription_status === 'active' ? 'var(--accent-lime)' : user.subscription_status === 'trial' ? 'var(--accent-orange)' : '#ef4444'}`,
+                        }}>
+                          {user.subscription_status === 'active' && <CheckCircle2 size={12} />}
+                          {user.subscription_status === 'trial' && <Clock size={12} />}
+                          {user.subscription_status}
+                        </span>
+                      </td>
+
+                      <td style={{ padding: '14px 16px' }}>
+                        <button
+                          onClick={() => handleToggleAdmin(user.id, !!user.is_admin)}
+                          style={{
+                            padding: '4px 10px',
+                            borderRadius: 'var(--radius-md)',
+                            fontSize: 11,
+                            fontWeight: 700,
+                            border: `1px solid ${user.is_admin ? 'rgba(245,158,11,0.4)' : 'var(--border-subtle)'}`,
+                            background: user.is_admin ? 'rgba(245,158,11,0.15)' : 'var(--bg-elevated)',
+                            color: user.is_admin ? '#f59e0b' : 'var(--text-muted)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {user.is_admin ? 'Admin' : 'Usuário'}
+                        </button>
+                      </td>
+
+                      <td style={{ padding: '14px 16px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                          {user.subscription_status !== 'active' && (
+                            <button
+                              onClick={() => handleStatusChange(user.id, 'active')}
+                              title="Ativar Acesso VIP"
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '4px 8px', fontSize: 11, color: 'var(--accent-lime)', borderColor: 'var(--accent-lime)' }}
+                            >
+                              <UserCheck size={13} />
+                              <span>Ativar VIP</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleExtendTrial(user.id)}
+                            title="Estender Trial +30 Dias"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', fontSize: 11, color: 'var(--accent-orange)', borderColor: 'var(--accent-orange)' }}
+                          >
+                            <CalendarPlus size={13} />
+                            <span>+30d</span>
+                          </button>
+
+                          {user.subscription_status === 'active' && (
+                            <button
+                              onClick={() => handleStatusChange(user.id, 'expired')}
+                              title="Revogar Acesso VIP"
+                              className="btn btn-danger btn-sm"
+                              style={{ padding: '4px 8px', fontSize: 11 }}
+                            >
+                              <UserX size={13} />
+                              <span>Expirar</span>
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
