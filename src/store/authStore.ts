@@ -89,9 +89,6 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
               apikey: supabaseAnonKey,
             };
 
-            console.log('[DEBUG] token bruto:', JSON.stringify(access_token));
-            console.log('[DEBUG] headers enviados:', JSON.stringify(headersEnviados));
-
             // Chamada nativa direta para a API REST do Supabase (/auth/v1/user)
             const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
               headers: headersEnviados,
