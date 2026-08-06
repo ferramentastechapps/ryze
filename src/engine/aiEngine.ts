@@ -478,7 +478,12 @@ export function generateWeekPlan(profile: UserProfile, weekNumber: number = 1): 
   const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
   const dayWorkouts: Record<string, DayWorkout> = {};
 
-  const fcZones = getFCZones(profile.age || 36);
+  const age = profile.age || 36;
+  const fcZones = getFCZones(age);
+  const isBeginner = profile.experienceLevel === 'iniciante';
+  const isAdvanced = profile.experienceLevel === 'avancado';
+  const hasRunning = profile.runnerLevel !== 'nenhum';
+  const daysPerWeek = profile.daysPerWeek || 5;
 
   // Instancia os treinos de Musculação do Atleta Híbrido (A a E)
   const treinoA = buildTreinoA(profile);
@@ -492,60 +497,80 @@ export function generateWeekPlan(profile: UserProfile, weekNumber: number = 1): 
   const run12 = buildRunIntervalado12(profile);
   const run11 = buildRunIntervalado11(profile);
 
-  // ─── Estrutura de Prescrição do Atleta Híbrido (PDF Oficial) ─────────────
-  // O plano é HÍBRIDO (5 Dias de Musculação A, B, C, D, E + Corrida nas Terças, Quintas e Sábados)
-  // Nos dias de corrida conjugada (Terça, Quinta e Sábado), prescrevemos o HybridWorkout ou a combinação perfeita!
+  // Adaptação por Nível de Experiência em Musculação (Séries & Repetições)
+  const adjustWorkoutLevel = (workout: StrengthWorkout): StrengthWorkout => {
+    const exercises = workout.exercises.map(ex => {
+      let sets = ex.sets;
+      if (isBeginner && ex.sets > 3) sets = 3;
+      if (isAdvanced && ex.sets < 5 && ex.blockType !== 'aquecimento') sets = ex.sets + 1;
+      return { ...ex, sets };
+    });
+    return {
+      ...workout,
+      exercises,
+      volume: exercises.reduce((sum, e) => sum + e.sets * 12, 0),
+    };
+  };
 
-  dayWorkouts['segunda'] = treinoA; // Musculação Treino A (Inferiores + Abs)
-  
-  dayWorkouts['terca'] = {
-    type: 'hibrido',
-    title: 'Treino B (Peito/Ombro/Bíceps) + Corrida Intervalada 1:3',
-    description: 'Sessão dupla: Musculação Treino B + Corrida Intervalada 1:3 Moderada em Zonas Z1/Z3.',
-    strength: treinoB,
-    run: run13,
-  } as HybridWorkout;
+  const adjA = adjustWorkoutLevel(treinoA);
+  const adjB = adjustWorkoutLevel(treinoB);
+  const adjC = adjustWorkoutLevel(treinoC);
+  const adjD = adjustWorkoutLevel(treinoD);
+  const adjE = adjustWorkoutLevel(treinoE);
 
-  dayWorkouts['quarta'] = treinoC; // Musculação Treino C (Costas + Tríceps)
+  // ─── Montagem Dinâmica de Acordo com Dias por Semana e Perfil ────────────
 
-  dayWorkouts['quinta'] = {
-    type: 'hibrido',
-    title: 'Treino D (Peito/Ombro/Bíceps) + Corrida Intervalada 1:2',
-    description: 'Sessão dupla: Musculação Treino D + Corrida Intervalada 1:2 Moderada em Zonas Z1/Z3.',
-    strength: treinoD,
-    run: run12,
-  } as HybridWorkout;
-
-  dayWorkouts['sexta'] = treinoE; // Musculação Treino E (Costas + Tríceps)
-
-  dayWorkouts['sabado'] = {
-    type: 'hibrido',
-    title: 'Corrida Intervalada 1:1 + Core / Mobilidade',
-    description: 'Corrida Intervalada 1:1 Moderada (7x 1min Z3 + 1min Z1) + Sessão de Core.',
-    strength: {
-      type: 'musculacao',
-      letter: 'A',
-      title: 'Core & Mobilidade de Fim de Semana',
-      description: 'Fortalecimento de abdominal, estabilidade lombar e soltura miofascial.',
-      focus: ['core', 'pernas'],
-      exercises: treinoA.exercises.filter(ex => ex.blockType === 'aquecimento' || ex.blockType === 'tabata'),
-      duration: 30,
-      intensity: 'baixa',
-      volume: 48,
-    },
-    run: run11,
-  } as HybridWorkout;
-
-  dayWorkouts['domingo'] = {
-    type: 'descanso',
-    title: 'Descanso Completo & Recuperação Metabólica',
-    description: 'O crescimento e a perda de gordura ocorrem no descanso. Sono (7-9h) e hidratação.',
-    activities: [
-      'Dormir 7 a 9 horas para restaurar o sistema nervoso central',
-      'Hidratação reforçada (35ml/kg de peso corporal)',
-      'Refeições com alta densidade nutricional e proteínas (2g/kg)',
-    ],
-  } as RestDay;
+  if (daysPerWeek === 3) {
+    dayWorkouts['segunda'] = hasRunning ? ({ type: 'hibrido', title: 'Treino A (Inferiores) + Corrida 1:3', description: 'Membros Inferiores + Corrida Z1/Z3', strength: adjA, run: run13 } as HybridWorkout) : adjA;
+    dayWorkouts['terca'] = { type: 'descanso', title: 'Descanso / Recuperação Ativa', description: 'Caminhada leve e mobilidade' } as RestDay;
+    dayWorkouts['quarta'] = hasRunning ? ({ type: 'hibrido', title: 'Treino B (Peito/Ombros/Bíceps) + Corrida 1:2', description: 'Membros Superiores + Corrida Z1/Z3', strength: adjB, run: run12 } as HybridWorkout) : adjB;
+    dayWorkouts['quinta'] = { type: 'descanso', title: 'Descanso Completo', description: 'Sono e nutrição' } as RestDay;
+    dayWorkouts['sexta'] = hasRunning ? ({ type: 'hibrido', title: 'Treino C (Costas/Tríceps) + Corrida 1:1', description: 'Cadeia Posterior + Corrida Z1/Z3', strength: adjC, run: run11 } as HybridWorkout) : adjC;
+    dayWorkouts['sabado'] = { type: 'ativo', title: 'Recuperação Ativa', description: 'Alongamento e regeneração' } as RestDay;
+    dayWorkouts['domingo'] = { type: 'descanso', title: 'Descanso Completo', description: 'Sono 7-9h' } as RestDay;
+  } else if (daysPerWeek === 4) {
+    dayWorkouts['segunda'] = adjA;
+    dayWorkouts['terca'] = hasRunning ? ({ type: 'hibrido', title: 'Treino B + Corrida 1:3', description: 'Peito/Ombro/Bíceps + Corrida Z1/Z3', strength: adjB, run: run13 } as HybridWorkout) : adjB;
+    dayWorkouts['quarta'] = { type: 'descanso', title: 'Descanso Completo', description: 'Sono e nutrição' } as RestDay;
+    dayWorkouts['quinta'] = adjC;
+    dayWorkouts['sexta'] = hasRunning ? ({ type: 'hibrido', title: 'Treino D + Corrida 1:2', description: 'Superiores + Corrida Z1/Z3', strength: adjD, run: run12 } as HybridWorkout) : adjD;
+    dayWorkouts['sabado'] = { type: 'ativo', title: 'Mobilidade & Alongamento', description: 'Soltura muscular' } as RestDay;
+    dayWorkouts['domingo'] = { type: 'descanso', title: 'Descanso Completo', description: 'Sono 7-9h' } as RestDay;
+  } else {
+    // 5 a 6 dias (Protocolo Atleta Híbrido Padrão / PDF)
+    dayWorkouts['segunda'] = adjA;
+    dayWorkouts['terca'] = hasRunning ? ({ type: 'hibrido', title: 'Treino B (Peito/Ombro/Bíceps) + Corrida 1:3', description: 'Sessão dupla: Musculação Treino B + Corrida 1:3 Moderada em Zonas Z1/Z3.', strength: adjB, run: run13 } as HybridWorkout) : adjB;
+    dayWorkouts['quarta'] = adjC;
+    dayWorkouts['quinta'] = hasRunning ? ({ type: 'hibrido', title: 'Treino D (Peito/Ombro/Bíceps) + Corrida 1:2', description: 'Sessão dupla: Musculação Treino D + Corrida 1:2 Moderada em Zonas Z1/Z3.', strength: adjD, run: run12 } as HybridWorkout) : adjD;
+    dayWorkouts['sexta'] = adjE;
+    dayWorkouts['sabado'] = hasRunning ? ({
+      type: 'hibrido',
+      title: 'Corrida Intervalada 1:1 + Core / Mobilidade',
+      description: 'Corrida Intervalada 1:1 Moderada (7x 1min Z3 + 1min Z1) + Sessão de Core.',
+      strength: {
+        type: 'musculacao',
+        letter: 'A',
+        title: 'Core & Mobilidade de Fim de Semana',
+        description: 'Fortalecimento de abdominal, estabilidade lombar e soltura miofascial.',
+        focus: ['core', 'pernas'],
+        exercises: adjA.exercises.filter(ex => ex.blockType === 'aquecimento' || ex.blockType === 'tabata'),
+        duration: 30,
+        intensity: 'baixa',
+        volume: 48,
+      },
+      run: run11,
+    } as HybridWorkout) : { type: 'ativo', title: 'Recuperação Ativa', description: 'Caminhada leve' } as RestDay;
+    dayWorkouts['domingo'] = {
+      type: 'descanso',
+      title: 'Descanso Completo & Recuperação Metabólica',
+      description: 'O crescimento e a perda de gordura ocorrem no descanso. Sono (7-9h) e hidratação.',
+      activities: [
+        'Dormir 7 a 9 horas para restaurar o sistema nervoso central',
+        'Hidratação reforçada (35ml/kg de peso corporal)',
+        'Refeições com alta densidade nutricional e proteínas (2g/kg)',
+      ],
+    } as RestDay;
+  }
 
   // Cálculo de volume total de repetições e km acumulados
   let totalVolume = 0;
