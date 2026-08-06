@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles, LogOut } from 'lucide-react';
+import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles, LogOut, ShieldCheck } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout } from '../types';
 import { getTodayWorkout, getProgressStats } from '../store/appStore';
 import { loadAICoach } from '../services/geminiService';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
 import CoachTipModal from '../components/CoachTipModal';
 import SubscriptionBadge from '../components/SubscriptionBadge';
+import { XpBar } from '../components/XpBar';
 import { useAuthStore } from '../store/authStore';
 import { signOut } from '../services/authService';
 
@@ -77,16 +78,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
     return 'Boa noite';
   };
 
-  const weekProgress = weekPlan ? (() => {
-    const completedDays = WEEK_DAYS.filter(day => {
-      return logs.some(l => {
-        const d = new Date(l.date);
-        const lDay = WEEK_DAYS[d.getDay() === 0 ? 6 : d.getDay() - 1];
-        return lDay === day && l.completed && d >= new Date(weekPlan.startDate);
-      });
-    }).length;
-    return completedDays;
-  })() : 0;
+  const weekProgress = logs.length;
 
   const totalWorkoutDays = weekPlan ? WEEK_DAYS.filter(day =>
     weekPlan.days[day]?.type !== 'descanso'
@@ -103,7 +95,7 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           <DashboardHeader />
 
           {/* Greeting */}
-          <div className="animate-fade-in" style={{ paddingTop: 16, paddingBottom: 32 }}>
+          <div className="animate-fade-in" style={{ paddingTop: 16, paddingBottom: 20 }}>
             <div style={{ fontSize: 14, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', marginBottom: 4 }}>
               {greeting()}, {profile?.name || 'atleta'}
             </div>
@@ -122,6 +114,11 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                 backgroundClip: 'text',
               }}>EVOLUIR?</span>
             </h1>
+          </div>
+
+          {/* XpBar Widget */}
+          <div className="animate-fade-in mb-6" style={{ animationDelay: '40ms' }}>
+            <XpBar />
           </div>
 
           {/* Today's Workout Card */}
@@ -602,6 +599,7 @@ function Stat({ label, value }: { label: string; value: string }) {
 // ─── Dashboard Header with User Avatar + Badge ────────────────────────────────
 function DashboardHeader() {
   const { authProfile, user } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleSignOut = async () => {
     try { await signOut(); } catch (e) { console.error(e); }
@@ -612,6 +610,24 @@ function DashboardHeader() {
       <img src="/logo-capa.png" alt="RYZE" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {authProfile?.is_admin && (
+          <button
+            onClick={() => navigate('/admin')}
+            title="Painel Admin"
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              padding: '4px 8px', borderRadius: 8,
+              background: 'rgba(245, 158, 11, 0.15)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              color: '#f59e0b', fontSize: 11, fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            <ShieldCheck size={14} />
+            <span>ADMIN</span>
+          </button>
+        )}
+
         <SubscriptionBadge />
 
         {/* User avatar */}

@@ -80,6 +80,26 @@ export interface LoggedSet {
   weight: number;
   completed: boolean;
   timestamp: string;
+  rpe?: number; // Escala 6-10 de Esforço Percebido
+  oneRM?: number; // 1RM calculado (Epley formula: weight * (1 + reps/30))
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Lucide icon name or emoji
+  category: 'streak' | 'volume' | 'workout' | 'level' | 'special';
+  unlockedAt?: string;
+}
+
+export interface GamificationState {
+  xp: number;
+  level: number;
+  streak: number;
+  bestStreak: number;
+  lastWorkoutDate: string | null;
+  unlockedBadges: string[]; // Badge IDs
 }
 
 export interface StrengthWorkout {
@@ -162,6 +182,8 @@ export interface WorkoutLog {
   duration?: number; // minutos reais
   notes?: string;
   rating?: 1 | 2 | 3 | 4 | 5;
+  xpEarned?: number;
+  rpeAverage?: number;
 }
 
 export interface ProgressStats {
@@ -189,4 +211,6 @@ export interface AppState {
   logs: WorkoutLog[];
   currentWeek: number;
   onboardingComplete: boolean;
+  gamification?: GamificationState;
 }
+

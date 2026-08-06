@@ -16,6 +16,7 @@ export interface Database {
           subscription_status: 'trial' | 'active' | 'canceled' | 'expired';
           stripe_customer_id: string | null;
           stripe_subscription_id: string | null;
+          is_admin?: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -29,6 +30,7 @@ export interface Database {
           subscription_status?: 'trial' | 'active' | 'canceled' | 'expired';
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
+          is_admin?: boolean;
         };
         Update: {
           email?: string | null;
@@ -37,6 +39,7 @@ export interface Database {
           subscription_status?: 'trial' | 'active' | 'canceled' | 'expired';
           stripe_customer_id?: string | null;
           stripe_subscription_id?: string | null;
+          is_admin?: boolean;
           updated_at?: string;
         };
       };
@@ -54,6 +57,7 @@ export interface UserProfile_Auth {
   subscription_status: 'trial' | 'active' | 'canceled' | 'expired';
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
+  is_admin?: boolean;
 }
 
 export type AccessStatus = 'loading' | 'unauthenticated' | 'trial' | 'active' | 'expired';

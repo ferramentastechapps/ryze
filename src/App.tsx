@@ -14,6 +14,9 @@ import Progress from './pages/Progress';
 import AuthPage from './pages/AuthPage';
 import Paywall from './pages/Paywall';
 
+import Admin from './pages/Admin';
+import { AdminGuard } from './components/AdminGuard';
+
 import './styles/global.css';
 
 function ScrollToTop() {
@@ -112,6 +115,14 @@ export default function App() {
           <Route
             path="/progresso"
             element={isOnboarded ? <Progress state={state} /> : <Navigate to="/anamnese" replace />}
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminGuard>
+                <Admin />
+              </AdminGuard>
+            }
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

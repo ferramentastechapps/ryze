@@ -2,11 +2,13 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Check, ChevronLeft, Clock, Trophy, X, Info, Activity,
-  Flame, Heart, Wind, Zap, Lightbulb, TrendingUp, AlertTriangle,
+  Flame, Heart, Wind, Zap, Lightbulb, TrendingUp, AlertTriangle, Plus, Minus,
 } from 'lucide-react';
-import type { AppState, StrengthWorkout, RunWorkout, Exercise } from '../types';
+import type { AppState, StrengthWorkout, RunWorkout, Exercise, Badge } from '../types';
 import { getLastExerciseData } from '../store/appStore';
 import { useRyzeStore } from '../store/ryzeStore';
+import { useGamificationStore } from '../store/gamificationStore';
+import { AchievementToast } from '../components/AchievementToast';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
 
 interface ActiveWorkoutProps {
@@ -26,12 +28,14 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
   const navigate = useNavigate();
   const { weekPlan, logs } = state;
   const addLog = useRyzeStore(s => s.addLog);
+  const { checkAndAwardWorkout } = useGamificationStore();
 
   const workout = dayKey && weekPlan ? weekPlan.days[dayKey] : null;
 
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
   // Série atual por exercício: { [exerciseId]: número de séries concluídas }
   const [completedSetsMap, setCompletedSetsMap] = useState<Record<string, number>>({});
+  const [exerciseRpeMap, setExerciseRpeMap] = useState<Record<string, number>>({});
   const [showFinished, setShowFinished] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
@@ -40,6 +44,9 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
   const [restTotal, setRestTotal] = useState<number>(60);
   const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [newBadges, setNewBadges] = useState<Badge[]>([]);
+  const [earnedXp, setEarnedXp] = useState<number>(0);
+  const [showAchievementToast, setShowAchievementToast] = useState(false);
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const restTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -199,7 +206,18 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
   }
 
   if (showFinished) {
-    return <FinishedScreen elapsedTime={elapsedTime} workout={workout} completedExercises={completedExercises} onContinue={() => navigate('/dashboard')} />;
+    return (
+      <>
+        {showAchievementToast && (
+          <AchievementToast
+            badges={newBadges}
+            earnedXp={earnedXp}
+            onClose={() => setShowAchievementToast(false)}
+          />
+        )}
+        <FinishedScreen elapsedTime={elapsedTime} workout={workout} completedExercises={completedExercises} onContinue={() => navigate('/dashboard')} />
+      </>
+    );
   }
 
   const isHybrid = workout.type === 'hibrido';
