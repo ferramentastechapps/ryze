@@ -7,7 +7,8 @@ export interface ExerciseGuide {
   name: string;
   category: 'peito' | 'costas' | 'pernas' | 'ombros' | 'biceps' | 'triceps' | 'gluteos' | 'core';
   image?: string;
-  gifUrls: string[];       // URLs em ordem de prioridade (fallback automático entre CDNs)
+  /** @deprecated Substituído por modelo 3D GLB. Mantido apenas como último fallback. */
+  gifUrls?: string[];
   primaryMuscles: string[];
   secondaryMuscles: string[];
   equipmentNeeded: string;
@@ -15,6 +16,26 @@ export interface ExerciseGuide {
   activationLevel: number; // 0 a 100%
   tempo: string; // ex: "3-0-1-0" (descida - pausa - subida - pausa)
   motionType: 'squat' | 'bench_press' | 'pull_up' | 'hip_thrust' | 'overhead_press' | 'bicep_curl' | 'tricep_extension' | 'generic';
+  /**
+   * true = GLB disponível no Supabase Storage em /exercises/{id}/animation.glb
+   * Para ativar 3D em um exercício:
+   *   1. Faça upload do GLB no Supabase Storage (bucket: exercises)
+   *   2. Mude has3d para true aqui
+   *   3. Pronto — zero alteração de código
+   */
+  has3d: boolean;
+  /** URL customizada do GLB (opcional — se omitida, usa URL padrão do Supabase Storage) */
+  glbUrl?: string;
+  /** Músculos estabilizadores e de suporte postural */
+  stabilizers?: string[];
+  /** Articulações principais envolvidas no movimento */
+  jointsInvolved?: string[];
+  /** Plano biomecânico de movimento (Sagital, Frontal, Transverso, Multiplanar) */
+  movementPlane?: string;
+  /** Amplitude de movimento em graus (ROM) */
+  romDegrees?: string;
+  /** Classificação mecânica (Composto Multiarticular vs Isolado Monoarticular) */
+  exerciseType?: string;
   steps: {
     setup: string[];
     execution: string[];
@@ -78,10 +99,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Supino Reto com Barra',
     category: 'peito',
     motionType: 'bench_press',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press/0.jpg',
-      'https://cdn.jsdelivr.net/gh/JahelCuadrado/ExerciseGymGifsDB@main/chest/barbell-bench-press.gif',
-    ],
+    has3d: false, // Mude para true após upload do GLB no Supabase Storage
     primaryMuscles: ['Peitoral Maior (Esternal & Clavicular)', 'Serrátil Anterior'],
     secondaryMuscles: ['Tríceps Braquial', 'Deltoide Anterior'],
     equipmentNeeded: 'Barra Olímpica + Banco Reto',
@@ -117,9 +135,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Supino Inclinado com Halteres',
     category: 'peito',
     motionType: 'bench_press',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Incline_Dumbbell_Press/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Peitoral Superior (Porção Clavicular)'],
     secondaryMuscles: ['Deltoide Anterior', 'Tríceps Braquial'],
     equipmentNeeded: 'Halteres + Banco Inclinado (30°-45°)',
@@ -152,9 +168,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Agachamento Livre com Barra',
     category: 'pernas',
     motionType: 'squat',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Quadríceps (Vasto Lateral, Medial, Intermédio)', 'Glúteo Máximo'],
     secondaryMuscles: ['Isquiotibiais', 'Eretores da Espinha', 'Core / Abdômen'],
     equipmentNeeded: 'Barra Olímpica + RACK de Agachamento',
@@ -188,9 +202,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Barra Fixa (Pull-Up)',
     category: 'costas',
     motionType: 'pull_up',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Pullups/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Latíssimo do Dorso (Grande Dorsal)', 'Romboides'],
     secondaryMuscles: ['Bíceps Braquial', 'Braquiorradial', 'Trapézio'],
     equipmentNeeded: 'Barra Fixa',
@@ -224,9 +236,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Hip Thrust com Barra',
     category: 'gluteos',
     motionType: 'hip_thrust',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Glúteo Máximo', 'Glúteo Médio'],
     secondaryMuscles: ['Isquiotibiais', 'Quadríceps', 'Adutor Magno'],
     equipmentNeeded: 'Barra Olímpica + Banco + Protetor',
@@ -259,9 +269,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Desenvolvimento com Halteres',
     category: 'ombros',
     motionType: 'overhead_press',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Shoulder_Press/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Deltoide Anterior', 'Deltoide Lateral'],
     secondaryMuscles: ['Tríceps Braquial', 'Trapézio Superior'],
     equipmentNeeded: 'Halteres + Banco Ajustável',
@@ -288,9 +296,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Rosca Direta com Barra',
     category: 'biceps',
     motionType: 'bicep_curl',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Curl/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Bíceps Braquial'],
     secondaryMuscles: ['Braquial', 'Braquiorradial'],
     equipmentNeeded: 'Barra W / Barra Reta',
@@ -317,9 +323,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Extensão Testa com Barra',
     category: 'triceps',
     motionType: 'tricep_extension',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/EZ_Bar_Lying_Triceps_Extension/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Tríceps Braquial (Todas as cabeças)'],
     secondaryMuscles: ['Ancôneo'],
     equipmentNeeded: 'Barra W + Banco Reto',
@@ -345,9 +349,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Leg Press 45°',
     category: 'pernas',
     motionType: 'squat',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Press/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Quadríceps'],
     secondaryMuscles: ['Glúteo Máximo', 'Isquiotibiais'],
     equipmentNeeded: 'Máquina Leg Press 45°',
@@ -368,9 +370,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Remada Curvada com Barra',
     category: 'costas',
     motionType: 'pull_up',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Latíssimo do Dorso', 'Romboides'],
     secondaryMuscles: ['Bíceps Braquial', 'Deltoide Posterior', 'Eretores'],
     equipmentNeeded: 'Barra Olímpica',
@@ -391,9 +391,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     name: 'Elevação Lateral com Halteres',
     category: 'ombros',
     motionType: 'overhead_press',
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg',
-    ],
+    has3d: false,
     primaryMuscles: ['Deltoide Lateral'],
     secondaryMuscles: ['Deltoide Anterior', 'Trapézio Superior'],
     equipmentNeeded: 'Halteres',
@@ -444,19 +442,51 @@ export function getExerciseGuide(exerciseId: string, exerciseName: string, muscl
   else if (category === 'biceps') motionType = 'bicep_curl';
   else if (category === 'triceps') motionType = 'tricep_extension';
 
+  let movementPlane = 'Plano Sagital (Flexão/Extensão)';
+  let jointsInvolved = ['Glenoumeral (Ombro)', 'Cotovelo'];
+  let exerciseType = 'Composto Multiarticular';
+  let romDegrees = '110° Amplitude Completa';
+  let defaultStabilizers = ['Eretores da Espinha', 'Core / Abdômen', 'Manguito Rotador'];
+
+  if (category === 'pernas' || category === 'gluteos') {
+    jointsInvolved = ['Coxofemoral (Quadril)', 'Joelho', 'Tornozelo'];
+    movementPlane = 'Plano Sagital & Transverso';
+    romDegrees = '120° Profundo Paralelo';
+    defaultStabilizers = ['Eretores Lombares', 'Transiverso Abdominal', 'Glúteo Médio'];
+  } else if (category === 'costas') {
+    jointsInvolved = ['Escapulotorácica', 'Glenoumeral', 'Cotovelo'];
+    movementPlane = 'Plano Frontal & Sagital';
+    romDegrees = '105° Tração Completa';
+    defaultStabilizers = ['Bíceps Braquial', 'Antebraço', 'Core'];
+  } else if (category === 'ombros') {
+    jointsInvolved = ['Glenoumeral', 'Acromioclavicular', 'Cotovelo'];
+    movementPlane = 'Plano Frontal / Escapular';
+    romDegrees = '95° Elevação Vertical';
+    defaultStabilizers = ['Trapézio Superior', 'Tríceps', 'Core Espinhal'];
+  } else if (category === 'biceps' || category === 'triceps') {
+    jointsInvolved = ['Ulnohumeral (Cotovelo)'];
+    movementPlane = 'Plano Sagital Uniaxial';
+    romDegrees = '130° Isolamento Monoarticular';
+    exerciseType = 'Isolado Monoarticular';
+    defaultStabilizers = ['Braquiorradial', 'Deltoide Anterior', 'Puno'];
+  }
+
   return {
     id: exerciseId,
     name: exerciseName,
     category,
     motionType,
-    gifUrls: [
-      'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Full_Squat/0.jpg'
-    ],
+    has3d: false,
     primaryMuscles: muscleGroups.map(m => m.toUpperCase()),
-    secondaryMuscles: ['Estabilizadores do Core', 'Sinergistas'],
+    secondaryMuscles: ['Sinergistas Auxiliares', 'Cadeia Posterior'],
+    stabilizers: defaultStabilizers,
+    jointsInvolved,
+    movementPlane,
+    romDegrees,
+    exerciseType,
     equipmentNeeded: 'Equipamento padrão de academia',
     difficulty: 'Intermediário',
-    activationLevel: 85,
+    activationLevel: 88,
     tempo: '2-0-1-0',
     steps: {
       setup: [`Prepare o posicionamento alinhando a postura e ativando o core.`],

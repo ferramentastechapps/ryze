@@ -14,7 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    flowType: 'implicit',
+    flowType: 'pkce',
     persistSession: true,
     storageKey: 'ryze_auth',
     autoRefreshToken: true,

@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import type { User } from '@supabase/supabase-js';
 import type { UserProfile_Auth, AccessStatus } from '../types/supabase';
-import { getOrCreateProfile, onAuthStateChange } from '../services/authService';
+import { getOrCreateProfile } from '../services/authService';
 import { getAccessStatus } from '../services/subscriptionService';
 import { supabase } from '../services/supabase';
 
@@ -63,48 +63,96 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   setAuthLoading: (loading) => set({ authLoading: loading }),
 
   initialize: () => {
-    // Se há token OAuth na URL (fluxo implicit pós-redirect do Google)
-    // precisamos deixar o Supabase processar o hash antes de decidir o estado
-    const hasTokenInHash = window.location.hash.includes('access_token');
+    const hash = window.location.hash;
+    const search = window.location.search;
+    const hasTokenInHash = hash.includes('access_token');
+    const hasCodeInQuery = search.includes('code=');
 
-    const unsubscribe = onAuthStateChange(async (event, user) => {
-      console.log('[AuthStore] auth event:', event, '| user:', user?.email ?? 'null');
+    const processAuth = async () => {
+      set({ authLoading: true });
 
-      if (!user) {
-        // INITIAL_SESSION com null + token na URL = Supabase ainda está processando o hash
-        // Não fazer nada: o evento SIGNED_IN vai vir em seguida com o user
-        if (event === 'INITIAL_SESSION' && hasTokenInHash) {
-          console.log('[AuthStore] Aguardando processamento do token OAuth na URL...');
+      // ── 1. Resgate manual se há token OAuth na URL hash (#access_token=...) ──
+      // Resolve o problema de clock skew (relógio do cliente levemente desalinhado com o servidor Supabase)
+      if (hasTokenInHash) {
+        try {
+          const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+          const access_token = hashParams.get('access_token');
+          const refresh_token = hashParams.get('refresh_token');
+
+          if (access_token && refresh_token) {
+            console.log('[AuthStore] Forçando setSession com tokens da URL...');
+            const { data, error } = await supabase.auth.setSession({
+              access_token,
+              refresh_token,
+            });
+
+            if (data?.session?.user) {
+              console.log('[AuthStore] Sessão estabelecida via setSession com sucesso:', data.session.user.email);
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+              const { profile, status } = await buildSession(data.session.user);
+              set({ user: data.session.user, authProfile: profile, accessStatus: status, authLoading: false });
+              return;
+            } else if (error) {
+              console.warn('[AuthStore] Erro ao definir sessão via setSession:', error.message);
+            }
+          }
+        } catch (err) {
+          console.error('[AuthStore] Erro ao processar hash OAuth da URL:', err);
+        }
+      }
+
+      // ── 2. Se há código PKCE na URL (?code=...) ──
+      if (hasCodeInQuery) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            window.history.replaceState(null, '', window.location.pathname);
+            const { profile, status } = await buildSession(session.user);
+            set({ user: session.user, authProfile: profile, accessStatus: status, authLoading: false });
+            return;
+          }
+        } catch (err) {
+          console.error('[AuthStore] Erro ao processar código PKCE:', err);
+        }
+      }
+
+      // ── 3. Verificação padrão de sessão existente no localStorage ──
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const { profile, status } = await buildSession(session.user);
+          set({ user: session.user, authProfile: profile, accessStatus: status, authLoading: false });
           return;
         }
+      } catch (err) {
+        console.error('[AuthStore] Erro ao obter sessão atual:', err);
+      }
 
+      // Não autenticado
+      set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
+    };
+
+    // Listener para eventos de autenticação futuros (ex: logout, refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[AuthStore] onAuthStateChange event:', event, '| user:', session?.user?.email ?? 'null');
+
+      if (event === 'SIGNED_IN' && session?.user) {
+        if (window.location.hash.includes('access_token') || window.location.search.includes('code=')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+        const { profile, status } = await buildSession(session.user);
+        set({ user: session.user, authProfile: profile, accessStatus: status, authLoading: false });
+      } else if (event === 'SIGNED_OUT') {
         set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
-        return;
       }
-
-      set({ user, authLoading: true });
-
-      const { profile, status } = await buildSession(user);
-
-      // Limpar token da URL após autenticação bem-sucedida
-      if (window.location.hash.includes('access_token')) {
-        window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      }
-
-      set({ user, authProfile: profile, accessStatus: status, authLoading: false });
     });
 
-    // Se NÃO há token na URL (acesso normal), getSession() define o estado inicial.
-    // Se HÁ token na URL, o Supabase vai emitir SIGNED_IN via onAuthStateChange automaticamente.
-    if (!hasTokenInHash) {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        if (!session?.user) {
-          set({ user: null, authProfile: null, accessStatus: 'unauthenticated', authLoading: false });
-        }
-      });
-    }
+    // Executa a verificação inicial
+    processAuth();
 
-    return unsubscribe;
+    return () => {
+      subscription.unsubscribe();
+    };
   },
 
   refreshProfile: async () => {
