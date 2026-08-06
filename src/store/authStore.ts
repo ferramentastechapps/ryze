@@ -104,6 +104,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // ── 2. Se há código PKCE na URL (?code=...) ──
       if (hasCodeInQuery) {
         try {
+          const searchParams = new URLSearchParams(search);
+          const code = searchParams.get('code');
+          if (code) {
+            console.log('[AuthStore] Trocando código PKCE por sessão:', code);
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (data?.session?.user) {
+              console.log('[AuthStore] Sessão obtida via exchangeCodeForSession:', data.session.user.email);
+              window.history.replaceState(null, '', window.location.pathname);
+              const { profile, status } = await buildSession(data.session.user);
+              set({ user: data.session.user, authProfile: profile, accessStatus: status, authLoading: false });
+              return;
+            } else if (error) {
+              console.warn('[AuthStore] Erro ao trocar código PKCE via exchangeCodeForSession:', error.message);
+            }
+          }
+
+          // Tentativa secundária com getSession()
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
             window.history.replaceState(null, '', window.location.pathname);
