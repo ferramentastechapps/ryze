@@ -195,13 +195,17 @@ interface DayCardProps {
 }
 
 function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone, onToggle, onStartWorkout, onOpenDemo }: DayCardProps) {
-  const color = workout.type === 'musculacao' ? 'var(--accent-orange)' :
+  const isHybrid = workout.type === 'hibrido';
+  const color = isHybrid ? 'var(--accent-lime)' :
+    workout.type === 'musculacao' ? 'var(--accent-orange)' :
     workout.type === 'corrida' ? 'var(--accent-cyan)' : 'var(--text-muted)';
 
-  const colorDim = workout.type === 'musculacao' ? 'var(--accent-orange-dim)' :
+  const colorDim = isHybrid ? 'var(--accent-lime-dim)' :
+    workout.type === 'musculacao' ? 'var(--accent-orange-dim)' :
     workout.type === 'corrida' ? 'var(--accent-cyan-dim)' : 'var(--bg-elevated)';
 
-  const typeLabel = workout.type === 'musculacao' ? 'Musculação' :
+  const typeLabel = isHybrid ? 'Treino Híbrido (Duplo)' :
+    workout.type === 'musculacao' ? 'Musculação' :
     workout.type === 'corrida' ? 'Corrida' :
     workout.type === 'ativo' ? 'Ativo' : 'Descanso';
 
@@ -246,6 +250,8 @@ function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone,
           </span>
           {isDone ? (
             <span style={{ fontSize: 14 }}>✓</span>
+          ) : isHybrid ? (
+            <Zap size={15} color={color} />
           ) : workout.type === 'musculacao' ? (
             <Dumbbell size={14} color={color} />
           ) : workout.type === 'corrida' ? (
@@ -256,7 +262,7 @@ function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone,
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, color: isToday ? 'var(--accent-lime)' : 'var(--text-primary)' }}>
               {workout.title}
             </span>
@@ -264,12 +270,15 @@ function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone,
             {isDone && <span className="badge badge-lime" style={{ fontSize: 9, padding: '2px 8px' }}>✓ FEITO</span>}
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-ui)' }}>
-            {dayFull} · <span style={{ color }}>{typeLabel}</span>
+            {dayFull} · <span style={{ color, fontWeight: 700 }}>{typeLabel}</span>
             {workout.type === 'musculacao' && (
               <span> · {(workout as StrengthWorkout).exercises.length} exercícios · {(workout as StrengthWorkout).duration}min</span>
             )}
             {workout.type === 'corrida' && (
               <span> · {(workout as RunWorkout).distance}km · Pace {(workout as RunWorkout).paceTarget}</span>
+            )}
+            {isHybrid && (
+              <span> · {(workout as any).strength?.exercises?.length || 0} ex. + {(workout as any).run?.distance || 0}km</span>
             )}
           </div>
         </div>
@@ -288,6 +297,24 @@ function DayCard({ day, dayLabel, dayFull, workout, isExpanded, isToday, isDone,
           <p style={{ color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
             {workout.description}
           </p>
+
+          {/* Hybrid workout details */}
+          {workout.type === 'hibrido' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div style={{ borderBottom: '1px solid var(--border-subtle)', paddingBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: 'var(--accent-orange)', marginBottom: 10, fontFamily: 'var(--font-ui)', textTransform: 'uppercase' }}>
+                  <Dumbbell size={14} /> SESSÃO 1: MUSCULAÇÃO DE ALTA PERFORMANCE
+                </div>
+                <StrengthDetails workout={(workout as any).strength} onOpenDemo={onOpenDemo} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: 'var(--accent-cyan)', marginBottom: 10, fontFamily: 'var(--font-ui)', textTransform: 'uppercase' }}>
+                  <Activity size={14} /> SESSÃO 2: CORRIDA POR ZONAS (%FCMÁX)
+                </div>
+                <RunDetails workout={(workout as any).run} />
+              </div>
+            </div>
+          )}
 
           {/* Strength workout details */}
           {workout.type === 'musculacao' && (
@@ -333,59 +360,90 @@ function StrengthDetails({
   workout: StrengthWorkout;
   onOpenDemo: (id: string, name: string, muscles: string[]) => void;
 }) {
+  let lastBlock = '';
+
   return (
     <div>
       <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12 }}>
-        EXERCÍCIOS (CLIQUE PARA VER O GUIA & DEMO)
+        EXERCÍCIOS & BLOCOS METÓDICOS (CLIQUE PARA VER DEMO)
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        {workout.exercises.map((ex, i) => (
-          <div
-            key={ex.id}
-            onClick={() => onOpenDemo(ex.id, ex.name, ex.muscleGroups)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 12,
-              padding: '10px 12px',
-              background: 'var(--bg-elevated)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              transition: 'background var(--transition-fast)',
-            }}
-          >
-            <div style={{
-              width: 24, height: 24,
-              borderRadius: 6,
-              background: 'var(--accent-orange-dim)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700, color: 'var(--accent-orange)',
-              fontFamily: 'var(--font-ui)',
-              flexShrink: 0,
-            }}>
-              {i + 1}
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>{ex.name}</span>
-                <Info size={13} style={{ color: 'var(--accent-lime)' }} />
-              </div>
-              {ex.technique && (
-                <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {ex.technique}
+        {workout.exercises.map((ex, i) => {
+          const showBlockHeader = ex.blockName && ex.blockName !== lastBlock;
+          if (ex.blockName) lastBlock = ex.blockName;
+
+          return (
+            <div key={ex.id + '-' + i}>
+              {showBlockHeader && (
+                <div style={{
+                  fontSize: 10,
+                  fontWeight: 900,
+                  color: 'var(--accent-orange)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-ui)',
+                  marginTop: i > 0 ? 10 : 0,
+                  marginBottom: 6,
+                  padding: '4px 8px',
+                  background: 'rgba(255,94,0,0.08)',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'inline-block',
+                }}>
+                  {ex.blockName}
                 </div>
               )}
-            </div>
-            <div style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', fontFamily: 'var(--font-ui)' }}>
-                {ex.sets}×{ex.reps}
+              <div
+                onClick={() => onOpenDemo(ex.id, ex.name, ex.muscleGroups)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '10px 12px',
+                  background: 'var(--bg-elevated)',
+                  borderRadius: 'var(--radius-md)',
+                  cursor: 'pointer',
+                  transition: 'background var(--transition-fast)',
+                }}
+              >
+                <div style={{
+                  width: 24, height: 24,
+                  borderRadius: 6,
+                  background: 'var(--accent-orange-dim)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 700, color: 'var(--accent-orange)',
+                  fontFamily: 'var(--font-ui)',
+                  flexShrink: 0,
+                }}>
+                  {i + 1}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: 'var(--text-primary)', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span>{ex.name}</span>
+                    <Info size={13} style={{ color: 'var(--accent-lime)' }} />
+                  </div>
+                  {ex.pairedExerciseName && (
+                    <div style={{ fontSize: 11, color: 'var(--accent-orange)', fontWeight: 700, marginTop: 2 }}>
+                      + {ex.pairedExerciseName}
+                    </div>
+                  )}
+                  {ex.technique && (
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ex.technique}
+                    </div>
+                  )}
+                </div>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-orange)', fontFamily: 'var(--font-ui)' }}>
+                    {ex.sets}×{ex.reps}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)' }}>
+                    {ex.rest}s desc.
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)' }}>
-                {ex.rest}s desc.
-              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

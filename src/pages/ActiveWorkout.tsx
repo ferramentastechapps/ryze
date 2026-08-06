@@ -202,13 +202,14 @@ export default function ActiveWorkout({ state, onUpdate }: ActiveWorkoutProps) {
     return <FinishedScreen elapsedTime={elapsedTime} workout={workout} completedExercises={completedExercises} onContinue={() => navigate('/dashboard')} />;
   }
 
-  const isStrength = workout.type === 'musculacao';
-  const isRun = workout.type === 'corrida';
-  const accentColor = isStrength ? 'var(--accent-orange)' : 'var(--accent-cyan)';
-  const accentGradient = isStrength ? 'var(--gradient-orange)' : 'var(--gradient-cyan)';
+  const isHybrid = workout.type === 'hibrido';
+  const isStrength = workout.type === 'musculacao' || isHybrid;
+  const isRun = workout.type === 'corrida' || isHybrid;
+  const accentColor = isHybrid ? 'var(--accent-lime)' : isStrength ? 'var(--accent-orange)' : 'var(--accent-cyan)';
+  const accentGradient = isHybrid ? 'var(--gradient-lime)' : isStrength ? 'var(--gradient-orange)' : 'var(--gradient-cyan)';
 
-  const strengthWorkout = isStrength ? workout as StrengthWorkout : null;
-  const runWorkout = isRun ? workout as RunWorkout : null;
+  const strengthWorkout = isHybrid ? (workout as any).strength as StrengthWorkout : isStrength ? workout as StrengthWorkout : null;
+  const runWorkout = isHybrid ? (workout as any).run as RunWorkout : isRun ? workout as RunWorkout : null;
 
   const totalExercises = strengthWorkout?.exercises.length || 0;
   const progress = totalExercises > 0 ? (completedExercises.size / totalExercises) * 100 : 0;
@@ -654,6 +655,19 @@ function ExerciseCard({
 
         {/* Nome + info */}
         <div style={{ flex: 1, minWidth: 0 }}>
+          {exercise.blockName && (
+            <div style={{
+              fontSize: 9,
+              fontWeight: 900,
+              color: 'var(--accent-orange)',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              fontFamily: 'var(--font-ui)',
+              marginBottom: 2,
+            }}>
+              {exercise.blockName}
+            </div>
+          )}
           <div style={{
             fontFamily: 'var(--font-ui)',
             fontWeight: 700,
@@ -663,6 +677,11 @@ function ExerciseCard({
           }}>
             {exercise.name}
           </div>
+          {exercise.pairedExerciseName && (
+            <div style={{ fontSize: 11, color: 'var(--accent-orange)', fontWeight: 700, marginTop: 1 }}>
+              + {exercise.pairedExerciseName}
+            </div>
+          )}
           <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
             {exercise.sets} séries · {exercise.reps} reps · {exercise.rest}s descanso
           </div>

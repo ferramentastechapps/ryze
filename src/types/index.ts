@@ -61,7 +61,7 @@ export interface Exercise {
   name: string;
   muscleGroups: MuscleGroup[];
   sets: number;
-  reps: string; // ex: "8-12" ou "3x10"
+  reps: string; // ex: "8-12" ou "3x10" ou "15-12-10-8"
   rest: number; // segundos
   weight?: number; // kg sugerido ou atual
   notes?: string;
@@ -69,6 +69,9 @@ export interface Exercise {
   videoUrl?: string;
   completed?: boolean;
   loggedSets?: LoggedSet[];
+  blockName?: string; // ex: "BLOCO 01 - AQUECIMENTO", "BLOCO 02 - PIRÂMIDE", "BLOCO 06 - BI-SET"
+  blockType?: 'aquecimento' | 'piramide' | 'meta' | 'dropset' | 'biset' | 'tabata' | 'generico';
+  pairedExerciseName?: string; // Para Bi-Set (ex: "Panturrilha em Pé")
 }
 
 export interface LoggedSet {
@@ -88,6 +91,7 @@ export interface StrengthWorkout {
   exercises: Exercise[];
   intensity: 'baixa' | 'media' | 'alta';
   volume: number; // total de séries
+  letter?: 'A' | 'B' | 'C' | 'D' | 'E'; // Identificador do Treino A, B, C...
 }
 
 export interface RunWorkout {
@@ -98,17 +102,26 @@ export interface RunWorkout {
   distance: number; // km
   duration: number; // minutos estimado
   paceTarget?: string;
-  heartRateZone?: string;
+  heartRateZone?: string; // ex: "Z3 (70-79% FCmáx)"
+  fcMaxTarget?: string; // ex: "128 - 145 bpm"
   intervals?: RunInterval[];
   warmup?: string;
   cooldown?: string;
   intensity: 'baixa' | 'media' | 'alta';
 }
 
+export interface HybridWorkout {
+  type: 'hibrido';
+  title: string;
+  description: string;
+  strength: StrengthWorkout;
+  run: RunWorkout;
+}
+
 export interface RunInterval {
-  effort: string; // ex: "400m" ou "3min"
+  effort: string; // ex: "400m" ou "30seg"
   pace: string;
-  recovery: string;
+  recovery: string; // ex: "90seg caminhada Z1"
   repetitions: number;
 }
 
@@ -119,7 +132,7 @@ export interface RestDay {
   activities?: string[];
 }
 
-export type DayWorkout = StrengthWorkout | RunWorkout | RestDay;
+export type DayWorkout = StrengthWorkout | RunWorkout | HybridWorkout | RestDay;
 
 export interface WeekPlan {
   weekNumber: number;
@@ -130,6 +143,14 @@ export interface WeekPlan {
   totalVolume: number;
   totalKm: number;
   focusMuscles: MuscleGroup[];
+  fcMaxCalculated?: number; // FCmáx estimada (Tanaka)
+  fcZones?: {
+    z1: string; // 50-59%
+    z2: string; // 60-69%
+    z3: string; // 70-79%
+    z4: string; // 80-89%
+    z5: string; // 90-95%
+  };
 }
 
 export interface WorkoutLog {

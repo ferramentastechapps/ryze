@@ -1,5 +1,7 @@
 // ============================================================
-// HYBRID FORGE — AI Engine (Motor de Geração de Treinos)
+// RYZE / HYBRID FORGE — AI Engine (Motor de Treino Híbrido Científico)
+// Metodologia baseada em Fisiologia do Treinamento Concorrente (Hickson / Fyfe et al.)
+// e no Protocolo de Treino do Atleta Híbrido (Willian Folster & Victor Pareto)
 // ============================================================
 
 import type {
@@ -8,250 +10,558 @@ import type {
   DayWorkout,
   StrengthWorkout,
   RunWorkout,
+  HybridWorkout,
   RestDay,
   Exercise,
   MuscleGroup,
   RunInterval,
 } from '../types';
 
-// ─── Exercício Database ────────────────────────────────────────────────────
+// ─── Calculadoras Fisiológicas (Tanaka & 1RM) ──────────────────────────────
 
-const EXERCISE_DB: Record<string, Exercise[]> = {
-  peito: [
-    { id: 'supino_reto', name: 'Supino Reto com Barra', muscleGroups: ['peito', 'triceps', 'ombros'], sets: 4, reps: '8-12', rest: 90, technique: 'Desça controlado em 3s, suba explosivo' },
-    { id: 'supino_inclinado', name: 'Supino Inclinado com Halteres', muscleGroups: ['peito', 'ombros'], sets: 3, reps: '10-15', rest: 75, technique: 'Foco na porção superior do peitoral' },
-    { id: 'crossover', name: 'Crossover Cabo', muscleGroups: ['peito'], sets: 3, reps: '12-15', rest: 60, technique: 'Adução completa, esprema no final' },
-    { id: 'flexao', name: 'Flexão de Braço', muscleGroups: ['peito', 'triceps'], sets: 3, reps: '15-20', rest: 60 },
-    { id: 'peck_deck', name: 'Peck Deck / Voador', muscleGroups: ['peito'], sets: 3, reps: '12-15', rest: 60, technique: 'Isolamento completo do peitoral' },
-    { id: 'mergulho', name: 'Mergulho em Paralelas (Peito)', muscleGroups: ['peito', 'triceps'], sets: 3, reps: '10-12', rest: 90, technique: 'Incline o tronco para frente para ativar mais o peitoral' },
-  ],
-  costas: [
-    { id: 'barra_fixa', name: 'Barra Fixa (Pull-up)', muscleGroups: ['costas', 'biceps'], sets: 4, reps: '6-10', rest: 90, technique: 'Puxada completa, chegue ao queixo' },
-    { id: 'remada_curvada', name: 'Remada Curvada com Barra', muscleGroups: ['costas', 'biceps'], sets: 4, reps: '8-12', rest: 90, technique: 'Cotovelos próximos ao corpo, escápula retrai' },
-    { id: 'puxada_frontal', name: 'Puxada Frontal no Cabo', muscleGroups: ['costas', 'biceps'], sets: 3, reps: '10-15', rest: 75, technique: 'Leve inclinação para trás, puxe até o queixo' },
-    { id: 'remada_maquina', name: 'Remada na Máquina', muscleGroups: ['costas'], sets: 3, reps: '12-15', rest: 60 },
-    { id: 'remada_unilateral', name: 'Remada Unilateral com Halter', muscleGroups: ['costas', 'biceps'], sets: 3, reps: '10-12', rest: 75, technique: 'Joelho e mão de apoio no banco, puxe o cotovelo alto' },
-    { id: 'levantamento_terra', name: 'Levantamento Terra', muscleGroups: ['costas', 'pernas', 'gluteos'], sets: 4, reps: '5-8', rest: 120, technique: 'Coluna neutra, empurre o chão, não puxe a barra' },
-  ],
-  pernas: [
-    { id: 'agachamento', name: 'Agachamento Livre', muscleGroups: ['pernas', 'gluteos'], sets: 4, reps: '8-12', rest: 120, technique: 'Desça até a paralela ou abaixo, joelhos na linha dos pés' },
-    { id: 'leg_press', name: 'Leg Press 45°', muscleGroups: ['pernas', 'gluteos'], sets: 4, reps: '10-15', rest: 90, technique: 'Amplitude completa sem travar os joelhos' },
-    { id: 'cadeira_extensora', name: 'Cadeira Extensora', muscleGroups: ['pernas'], sets: 3, reps: '12-15', rest: 60, technique: 'Extensão completa, segure 1s no topo' },
-    { id: 'mesa_flexora', name: 'Mesa Flexora', muscleGroups: ['pernas'], sets: 3, reps: '12-15', rest: 60 },
-    { id: 'stiff', name: 'Stiff com Barra', muscleGroups: ['pernas', 'gluteos'], sets: 3, reps: '10-12', rest: 90, technique: 'Sinta o alongamento dos isquiotibiais' },
-    { id: 'afundo', name: 'Avanço / Afundo', muscleGroups: ['pernas', 'gluteos'], sets: 3, reps: '12 cada', rest: 75 },
-    { id: 'panturrilha', name: 'Panturrilha em Pé', muscleGroups: ['pernas'], sets: 4, reps: '15-20', rest: 60, technique: 'Amplitude máxima, segure 1s no topo' },
-  ],
-  ombros: [
-    { id: 'desenvolvimento', name: 'Desenvolvimento com Halteres', muscleGroups: ['ombros', 'triceps'], sets: 4, reps: '10-12', rest: 90, technique: 'Evite hiper-extensão lombar' },
-    { id: 'elevacao_lateral', name: 'Elevação Lateral', muscleGroups: ['ombros'], sets: 4, reps: '12-15', rest: 60, technique: 'Levante até a altura dos ombros, polegar ligeiramente para baixo' },
-    { id: 'elevacao_frontal', name: 'Elevação Frontal', muscleGroups: ['ombros'], sets: 3, reps: '12-15', rest: 60 },
-    { id: 'remada_alta', name: 'Remada Alta com Barra', muscleGroups: ['ombros', 'trapezio'], sets: 3, reps: '12-15', rest: 75 },
-    { id: 'face_pull', name: 'Face Pull no Cabo', muscleGroups: ['ombros'], sets: 3, reps: '15-20', rest: 60, technique: 'Essencial para saúde do manguito rotador' },
-  ],
-  biceps: [
-    { id: 'rosca_direta', name: 'Rosca Direta com Barra', muscleGroups: ['biceps'], sets: 3, reps: '10-12', rest: 75 },
-    { id: 'rosca_alternada', name: 'Rosca Alternada com Halteres', muscleGroups: ['biceps'], sets: 3, reps: '10-12', rest: 75, technique: 'Supinação no final do movimento' },
-    { id: 'rosca_martelo', name: 'Rosca Martelo', muscleGroups: ['biceps'], sets: 3, reps: '12-15', rest: 60 },
-    { id: 'rosca_scott', name: 'Rosca Scott', muscleGroups: ['biceps'], sets: 3, reps: '10-12', rest: 75, technique: 'Isolamento máximo, evite usar o ombro' },
-  ],
-  triceps: [
-    { id: 'testa', name: 'Extensão Testa com Barra (Skullcrusher)', muscleGroups: ['triceps'], sets: 3, reps: '10-12', rest: 75 },
-    { id: 'triceps_cabo', name: 'Pushdown no Cabo', muscleGroups: ['triceps'], sets: 3, reps: '12-15', rest: 60, technique: 'Cotovelhos fixos ao lado do corpo' },
-    { id: 'mergulho_banco', name: 'Mergulho no Banco', muscleGroups: ['triceps'], sets: 3, reps: '15-20', rest: 60 },
-    { id: 'frances', name: 'Francês com Haltere', muscleGroups: ['triceps'], sets: 3, reps: '12-15', rest: 75 },
-  ],
-  gluteos: [
-    { id: 'hip_thrust', name: 'Hip Thrust com Barra', muscleGroups: ['gluteos', 'pernas'], sets: 4, reps: '10-15', rest: 90, technique: 'Extensão quadril completa, esprema no topo' },
-    { id: 'extensao_quadril', name: 'Extensão de Quadril no Cabo', muscleGroups: ['gluteos'], sets: 3, reps: '15-20', rest: 60 },
-    { id: 'agachamento_sumô', name: 'Agachamento Sumô', muscleGroups: ['gluteos', 'pernas'], sets: 4, reps: '12-15', rest: 90 },
-    { id: 'cadeira_abdutora', name: 'Cadeira Abdutora', muscleGroups: ['gluteos'], sets: 3, reps: '15-20', rest: 60 },
-  ],
-  core: [
-    { id: 'prancha', name: 'Prancha Isométrica', muscleGroups: ['core', 'abdomen'], sets: 3, reps: '45-60s', rest: 60 },
-    { id: 'abdominal_infra', name: 'Elevação de Pernas', muscleGroups: ['abdomen', 'core'], sets: 3, reps: '15-20', rest: 60 },
-    { id: 'crunch', name: 'Crunch Abdominal', muscleGroups: ['abdomen'], sets: 3, reps: '20-25', rest: 45 },
-    { id: 'russian_twist', name: 'Rotação Russa', muscleGroups: ['abdomen', 'core'], sets: 3, reps: '20 cada lado', rest: 60 },
-    { id: 'dead_bug', name: 'Dead Bug', muscleGroups: ['core'], sets: 3, reps: '10 cada lado', rest: 60, technique: 'Lombar colada no chão durante todo o movimento' },
-  ],
-};
-
-// ─── Helper Functions ──────────────────────────────────────────────────────
-
-function selectExercises(muscleGroups: MuscleGroup[], count: number, level: UserProfile['experienceLevel']): Exercise[] {
-  const exercises: Exercise[] = [];
-  const exercisePool: Exercise[] = muscleGroups.flatMap(mg => EXERCISE_DB[mg] || []);
-  
-  // Remove duplicates
-  const uniquePool = exercisePool.filter((ex, idx, arr) => arr.findIndex(e => e.id === ex.id) === idx);
-  
-  // Prioritize compound exercises for beginners
-  let sorted = [...uniquePool];
-  if (level === 'iniciante') {
-    sorted = sorted.sort((a, b) => (b.muscleGroups.length - a.muscleGroups.length));
-  }
-  
-  // Select up to `count` exercises
-  for (let i = 0; i < Math.min(count, sorted.length); i++) {
-    const ex = { ...sorted[i] };
-    // Adjust sets by level
-    if (level === 'iniciante') ex.sets = Math.max(2, ex.sets - 1);
-    if (level === 'avancado') ex.sets = ex.sets + 1;
-    exercises.push(ex);
-  }
-  
-  return exercises;
+/**
+ * Calculadora de Frequência Cardíaca Máxima (Fórmula de Tanaka et al., 2001)
+ * FCmáx = 208 - (0.7 * idade)
+ */
+export function calculateFCMax(age: number = 36): number {
+  return Math.round(208 - 0.7 * age);
 }
 
-function calculateVolume(exercises: Exercise[]): number {
-  return exercises.reduce((total, ex) => {
-    const repsNum = parseInt(ex.reps.split('-')[0]) || 10;
-    return total + (ex.sets * repsNum);
-  }, 0);
+/**
+ * Retorna as Zonas de Esforço Fisiológico (Z1 a Z5) parametrizadas em BPM
+ */
+export function getFCZones(age: number = 36) {
+  const fcMax = calculateFCMax(age);
+  return {
+    fcMax,
+    z1: `${Math.round(fcMax * 0.50)} - ${Math.round(fcMax * 0.59)} bpm (50-59% FCmáx)`,
+    z2: `${Math.round(fcMax * 0.60)} - ${Math.round(fcMax * 0.69)} bpm (60-69% FCmáx)`,
+    z3: `${Math.round(fcMax * 0.70)} - ${Math.round(fcMax * 0.79)} bpm (70-79% FCmáx)`,
+    z4: `${Math.round(fcMax * 0.80)} - ${Math.round(fcMax * 0.89)} bpm (80-89% FCmáx)`,
+    z5: `${Math.round(fcMax * 0.90)} - ${Math.round(fcMax * 0.95)} bpm (90-95% FCmáx)`,
+  };
 }
 
-function buildStrengthWorkout(
-  title: string,
-  description: string,
-  muscles: MuscleGroup[],
-  profile: UserProfile,
-  intensity: 'baixa' | 'media' | 'alta'
-): StrengthWorkout {
-  const exerciseCount = profile.experienceLevel === 'iniciante' ? 4 : profile.experienceLevel === 'intermediario' ? 5 : 6;
-  const exercises = selectExercises(muscles, exerciseCount, profile.experienceLevel);
-  
-  // Always add 1-2 core exercises at the end
-  const coreEx = selectExercises(['core'], 1, profile.experienceLevel);
-  exercises.push(...coreEx);
+/**
+ * Calculadora de 1RM (Epley, 1985)
+ * 1RM = Carga * (1 + 0.0333 * Repetições)
+ */
+export function calculate1RM(weightKg: number, reps: number): number {
+  if (reps <= 1) return weightKg;
+  return Math.round(weightKg * (1 + 0.0333 * reps));
+}
+
+// ─── Biblioteca Metódica de Treinos Híbridos (Blocos A a E) ────────────────
+
+function buildTreinoA(profile: UserProfile): StrengthWorkout {
+  const isBeginner = profile.experienceLevel === 'iniciante';
+  const setsBase = isBeginner ? 3 : 4;
+
+  const exercises: Exercise[] = [
+    {
+      id: 'mob_inf',
+      name: 'Flexibilidade e Mobilidade de Inferiores',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: 1,
+      reps: '5 min',
+      rest: 30,
+      blockName: 'BLOCO 01 - AQUECIMENTO',
+      blockType: 'aquecimento',
+      technique: 'Foco em tornozelos, quadril e rotação femoral pré-treino.',
+    },
+    {
+      id: 'agachamento_bodyweight',
+      name: 'Agachamento c/ Peso do Corpo',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: setsBase,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 01 - AQUECIMENTO',
+      blockType: 'aquecimento',
+      technique: 'Cadência 3-0-1-0. Ativação neuromuscular sem carga.',
+    },
+    {
+      id: 'agachamento_livre',
+      name: 'Agachamento Livre com Barra',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: setsBase,
+      reps: '15',
+      rest: 60,
+      blockName: 'BLOCO 02 - META DE REPETIÇÃO',
+      blockType: 'meta',
+      technique: 'Desça até a paralela (90°). Mantenha o joelho alinhado com a ponta dos pés.',
+    },
+    {
+      id: 'leg_press_45',
+      name: 'Leg Press 45°',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: setsBase,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 03 - META DE REPETIÇÃO',
+      blockType: 'meta',
+      technique: 'Pés na largura dos ombros no centro da plataforma. Não trave os joelhos no topo.',
+    },
+    {
+      id: 'cadeira_extensora',
+      name: 'Cadeira Extensora',
+      muscleGroups: ['pernas'],
+      sets: setsBase,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 04 - META DE REPETIÇÃO',
+      blockType: 'meta',
+      technique: 'Pico de contração isométrica de 1s na extensão máxima.',
+    },
+    {
+      id: 'terra_deadlift',
+      name: 'Terra Deadlift / Stiff',
+      muscleGroups: ['costas', 'pernas', 'gluteos'],
+      sets: 4,
+      reps: '15-12-10-8',
+      rest: 90,
+      blockName: 'BLOCO 05 - PIRÂMIDE',
+      blockType: 'piramide',
+      technique: 'Pirâmide crescente de carga: aumente o peso a cada série reduzindo as repetições.',
+    },
+    {
+      id: 'bi_abdutora',
+      name: 'Cadeira Abdutora',
+      muscleGroups: ['gluteos'],
+      sets: setsBase,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 06 - BI-SET',
+      blockType: 'biset',
+      pairedExerciseName: 'Panturrilha em Pé (15 repetições sem descanso)',
+      technique: 'Execute 15 reps na Abdutora e passe IMEDIATAMENTE para 15 reps de Panturrilha.',
+    },
+    {
+      id: 'bi_panturrilha',
+      name: 'Panturrilha em Pé',
+      muscleGroups: ['pernas'],
+      sets: setsBase,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 06 - BI-SET',
+      blockType: 'biset',
+      technique: 'Calcanhares descem ao máximo e sobem na ponta dos pés.',
+    },
+    {
+      id: 'abs_tabata',
+      name: 'Abdominal — Sequência Tabata',
+      muscleGroups: ['core', 'abdomen'],
+      sets: 2,
+      reps: '2x Sequência (4 min)',
+      rest: 180,
+      blockName: 'BLOCO 07 - ABDOMINAL',
+      blockType: 'tabata',
+      technique: '20seg de esforço máximo (Crunch/Prancha) + 10seg de descanso por 8 rounds.',
+    },
+  ];
 
   return {
     type: 'musculacao',
-    title,
-    description,
-    focus: muscles,
+    letter: 'A',
+    title: 'Treino A — Membros Inferiores + Abs',
+    description: 'Foco total em quadríceps, glúteos e abdômen estruturado em 7 blocos metódicos.',
+    focus: ['pernas', 'gluteos', 'core'],
     exercises,
-    duration: profile.sessionDuration,
-    intensity,
-    volume: calculateVolume(exercises),
+    duration: profile.sessionDuration || 60,
+    intensity: 'alta',
+    volume: exercises.reduce((acc, ex) => acc + ex.sets * 12, 0),
   };
 }
 
-function buildRunWorkout(
-  title: string,
-  description: string,
-  runType: RunWorkout['runType'],
-  distance: number,
-  profile: UserProfile
-): RunWorkout {
-  const intensity: 'baixa' | 'media' | 'alta' = 
-    runType === 'leve' ? 'baixa' :
-    runType === 'longao' ? 'media' : 'alta';
-  
-  // Adjust distance by runner level
-  const multiplier = profile.runnerLevel === 'iniciante' ? 0.6 :
-    profile.runnerLevel === 'intermediario' ? 0.85 : 1.0;
-  
-  const adjustedDistance = Math.round(distance * multiplier * 10) / 10;
-  const estimatedPace = profile.runnerLevel === 'iniciante' ? '7:30/km' :
-    profile.runnerLevel === 'intermediario' ? '6:00/km' : '5:00/km';
-  
-  const duration = Math.round((adjustedDistance / (60 / parseInt(estimatedPace))) * 60);
+function buildTreinoB(profile: UserProfile): StrengthWorkout {
+  const exercises: Exercise[] = [
+    {
+      id: 'mob_sup_b',
+      name: 'Aquecimento e Mobilidade de Superiores',
+      muscleGroups: ['peito', 'ombros'],
+      sets: 1,
+      reps: '5 min',
+      rest: 60,
+      blockName: 'BLOCO 01 - AQUECIMENTO',
+      blockType: 'aquecimento',
+      technique: 'Rotação de ombros e manguito rotador com elástico/halter leve.',
+    },
+    {
+      id: 'supino_reto_halteres',
+      name: 'Supino Reto c/ Halteres',
+      muscleGroups: ['peito', 'triceps', 'ombros'],
+      sets: 4,
+      reps: '15-12-10-8',
+      rest: 90,
+      blockName: 'BLOCO 02 - PIRÂMIDE',
+      blockType: 'piramide',
+      technique: 'Progrida a carga a cada série (15, 12, 10, 8 reps) mantendo amplitude profunda.',
+    },
+    {
+      id: 'supino_inclinado_halteres',
+      name: 'Supino Inclinado c/ Halteres',
+      muscleGroups: ['peito', 'ombros'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 03 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Banco a 30°-45°. Foco na porção clavicular (peitoral superior).',
+    },
+    {
+      id: 'voador_crossover',
+      name: 'Voador (Crossover Polia Alta)',
+      muscleGroups: ['peito'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 04 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Adução completa. Cruze as mãos levemente no centro para contração máxima.',
+    },
+    {
+      id: 'elevacao_frontal',
+      name: 'Elevação Frontal c/ Halteres',
+      muscleGroups: ['ombros'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 05 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Controle o movimento sem usar o balanço do tronco.',
+    },
+    {
+      id: 'elevacao_lateral',
+      name: 'Elevação Lateral c/ Halteres',
+      muscleGroups: ['ombros'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 06 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Cotovelos levemente flexionados, suba até a linha dos ombros.',
+    },
+    {
+      id: 'rosca_biceps_barra_w',
+      name: 'Rosca Bíceps Barra W',
+      muscleGroups: ['biceps'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 07 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Mantenha os cotovelos fixos ao lado do corpo.',
+    },
+    {
+      id: 'biceps_concentrado',
+      name: 'Bíceps Concentrado',
+      muscleGroups: ['biceps'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 08 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Apoie o cotovelo na coxa interna e isole o pico do bíceps.',
+    },
+  ];
 
-  let intervals: RunInterval[] | undefined;
-  let warmup: string | undefined;
-  let cooldown: string | undefined;
+  return {
+    type: 'musculacao',
+    letter: 'B',
+    title: 'Treino B — Peito, Ombro e Bíceps',
+    description: 'Hipertrofia de peitoral, deltoides e bíceps dividida em 8 blocos metódicos de repetição e pirâmide.',
+    focus: ['peito', 'ombros', 'biceps'],
+    exercises,
+    duration: profile.sessionDuration || 60,
+    intensity: 'alta',
+    volume: exercises.reduce((acc, ex) => acc + ex.sets * 12, 0),
+  };
+}
 
-  if (runType === 'intervalado') {
-    intervals = profile.runnerLevel === 'iniciante'
-      ? [{ effort: '200m', pace: '6:30/km', recovery: '200m caminhada', repetitions: 4 }]
-      : profile.runnerLevel === 'intermediario'
-      ? [{ effort: '400m', pace: '5:15/km', recovery: '200m trote leve', repetitions: 5 }]
-      : [{ effort: '800m', pace: '4:30/km', recovery: '400m trote', repetitions: 4 }];
-    warmup = '10 min trote leve (Zona 2)';
-    cooldown = '5 min caminhada + alongamento';
-  } else if (runType === 'tempo') {
-    warmup = '10 min aquecimento progressivo';
-    cooldown = '10 min desaceleração';
-  } else {
-    warmup = '5 min caminhada';
-    cooldown = '5 min caminhada';
-  }
+function buildTreinoC(profile: UserProfile): StrengthWorkout {
+  const exercises: Exercise[] = [
+    {
+      id: 'mob_sup_c',
+      name: 'Aquecimento e Mobilidade de Costas & Escápulas',
+      muscleGroups: ['costas', 'ombros'],
+      sets: 1,
+      reps: '5 min',
+      rest: 60,
+      blockName: 'BLOCO 01 - AQUECIMENTO',
+      blockType: 'aquecimento',
+      technique: 'Retração e depressão escapular na barra ou polia leve.',
+    },
+    {
+      id: 'puxada_alta_polia',
+      name: 'Puxada Alta na Polia ou Máquina',
+      muscleGroups: ['costas', 'biceps'],
+      sets: 4,
+      reps: '15',
+      rest: 120,
+      blockName: 'BLOCO 02 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Puxe direcionando a barra até a parte superior do peito.',
+    },
+    {
+      id: 'remada_baixa',
+      name: 'Remada Baixa no Cabo / Máquina',
+      muscleGroups: ['costas'],
+      sets: 4,
+      reps: '15',
+      rest: 90,
+      blockName: 'BLOCO 03 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Tronco ereto, escápulas seladas no final do movimento.',
+    },
+    {
+      id: 'pulldown_dropset',
+      name: 'Pulldown com Barra Reta',
+      muscleGroups: ['costas'],
+      sets: 4,
+      reps: '12 + Drop',
+      rest: 90,
+      blockName: 'BLOCO 04 - DROPSET',
+      blockType: 'dropset',
+      technique: 'Ao atingir a falha na 12ª rep, reduza 30% da carga imediatamente e vá até a falha.',
+    },
+    {
+      id: 'remada_supinada',
+      name: 'Remada Supinada com Barra',
+      muscleGroups: ['costas', 'biceps'],
+      sets: 4,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 05 - META DE REPETIÇÃO',
+      blockType: 'meta',
+      technique: 'Pegada invertida (palmas para cima). Foco na porção inferior do latíssimo.',
+    },
+    {
+      id: 'triceps_barra_reta',
+      name: 'Tríceps na Barra Reta (Pushdown)',
+      muscleGroups: ['triceps'],
+      sets: 4,
+      reps: '12 + Drop',
+      rest: 45,
+      blockName: 'BLOCO 06 - DROPSET',
+      blockType: 'dropset',
+      technique: 'Na 4ª série faça um dropset duplo reduzindo o peso sem pausa.',
+    },
+    {
+      id: 'peck_deck_invertido',
+      name: 'Peck Deck Invertido (Crucifixo Invertido)',
+      muscleGroups: ['ombros', 'costas'],
+      sets: 4,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 07 - META DE REPETIÇÕES',
+      blockType: 'meta',
+      technique: 'Isolamento do deltoide posterior e romboides.',
+    },
+  ];
 
+  return {
+    type: 'musculacao',
+    letter: 'C',
+    title: 'Treino C — Costas e Tríceps',
+    description: 'Trabalho completo da cadeia posterior e tríceps com técnicas de Dropset e meta de volume.',
+    focus: ['costas', 'triceps', 'ombros'],
+    exercises,
+    duration: profile.sessionDuration || 60,
+    intensity: 'alta',
+    volume: exercises.reduce((acc, ex) => acc + ex.sets * 12, 0),
+  };
+}
+
+function buildTreinoD(profile: UserProfile): StrengthWorkout {
+  const base = buildTreinoB(profile);
+  return {
+    ...base,
+    letter: 'D',
+    title: 'Treino D — Peito, Ombro e Bíceps (Foco Densidade)',
+    description: 'Segundo estímulo semanal de peitoral e deltóides com variações de ângulos e fadiga controlada.',
+  };
+}
+
+function buildTreinoE(profile: UserProfile): StrengthWorkout {
+  const base = buildTreinoC(profile);
+  return {
+    ...base,
+    letter: 'E',
+    title: 'Treino E — Costas e Tríceps (Foco Espessura)',
+    description: 'Segundo estímulo de dorsal e braços para fechamento de volume semanal.',
+  };
+}
+
+// ─── Planilha de Corrida por Zonas de Frequência Cardíaca ─────────────────
+
+function buildRunIntervalado13(profile: UserProfile): RunWorkout {
+  const zones = getFCZones(profile.age || 36);
   return {
     type: 'corrida',
-    runType,
-    title,
-    description,
-    distance: adjustedDistance,
-    duration,
-    paceTarget: estimatedPace,
-    heartRateZone: intensity === 'baixa' ? 'Zona 2 (65-75% FCmax)' : 
-      intensity === 'media' ? 'Zona 3-4 (75-88% FCmax)' : 'Zona 4-5 (88-95% FCmax)',
-    intervals,
-    warmup,
-    cooldown,
-    intensity,
+    runType: 'intervalado',
+    title: 'Corrida — Intervalado 1:3 Moderado (Atleta Híbrido)',
+    description: 'Aquecimento + 7 tiros de 30seg em Z3 alternados com 90seg de recuperação em Z1.',
+    distance: 3.5,
+    duration: 30,
+    paceTarget: profile.runnerLevel === 'iniciante' ? '6:30 - 7:15/km' : '5:30 - 6:15/km',
+    heartRateZone: `Z3 (${zones.z3}) / Z1 (${zones.z1})`,
+    fcMaxTarget: zones.z3,
+    warmup: '5 min trote leve em Z1 (Zona de Recuperação)',
+    cooldown: '5 min caminhada em Z1 + alongamento dinâmico',
+    intensity: 'media',
+    intervals: [
+      {
+        effort: '30 seg Z3 (Tiro Moderado)',
+        pace: 'Sub-máximo em Z3',
+        recovery: '90 seg Z1 (Caminhada leve)',
+        repetitions: 7,
+      },
+    ],
   };
 }
 
-function buildRestDay(active: boolean): RestDay {
-  if (active) {
-    return {
-      type: 'ativo',
-      title: 'Recuperação Ativa',
-      description: 'Atividade leve para acelerar a recuperação sem stressar o sistema nervoso central.',
-      activities: ['20-30 min caminhada leve', 'Yoga ou alongamento 20 min', 'Foam roller nos grupos treinados', 'Natação leve (opcional)'],
-    };
-  }
+function buildRunIntervalado12(profile: UserProfile): RunWorkout {
+  const zones = getFCZones(profile.age || 36);
   return {
-    type: 'descanso',
-    title: 'Descanso Completo',
-    description: 'O crescimento muscular acontece no descanso. Priorize sono (7-9h) e nutrição.',
-    activities: ['Dormir 7-9 horas', 'Hidratação adequada', 'Refeições ricas em proteína (1.8-2.2g/kg)', 'Caminhada leve se desejar'],
+    type: 'corrida',
+    runType: 'intervalado',
+    title: 'Corrida — Intervalado 1:2 Moderado (Atleta Híbrido)',
+    description: 'Aquecimento + 7 tiros de 45seg em Z3 alternados com 90seg de recuperação em Z1.',
+    distance: 4.0,
+    duration: 32,
+    paceTarget: profile.runnerLevel === 'iniciante' ? '6:15 - 7:00/km' : '5:15 - 6:00/km',
+    heartRateZone: `Z3 (${zones.z3}) / Z1 (${zones.z1})`,
+    fcMaxTarget: zones.z3,
+    warmup: '5 min trote leve em Z1',
+    cooldown: '5 min caminhada em Z1',
+    intensity: 'media',
+    intervals: [
+      {
+        effort: '45 seg Z3 (Tiro Moderado)',
+        pace: 'Sub-máximo em Z3',
+        recovery: '90 seg Z1 (Caminhada leve)',
+        repetitions: 7,
+      },
+    ],
   };
 }
 
-// ─── Plano por Objetivo ────────────────────────────────────────────────────
+function buildRunIntervalado11(profile: UserProfile): RunWorkout {
+  const zones = getFCZones(profile.age || 36);
+  return {
+    type: 'corrida',
+    runType: 'intervalado',
+    title: 'Corrida — Intervalado 1:1 Moderado (Atleta Híbrido)',
+    description: 'Aquecimento + 7 tiros de 1min em Z3 alternados com 1min de recuperação em Z1.',
+    distance: 4.5,
+    duration: 35,
+    paceTarget: profile.runnerLevel === 'iniciante' ? '6:00 - 6:45/km' : '5:00 - 5:45/km',
+    heartRateZone: `Z3 (${zones.z3}) / Z1 (${zones.z1})`,
+    fcMaxTarget: zones.z3,
+    warmup: '5 min trote leve em Z1',
+    cooldown: '5 min caminhada em Z1',
+    intensity: 'alta',
+    intervals: [
+      {
+        effort: '1 min Z3 (Tiro Moderado)',
+        pace: 'Ritmo Forte Z3',
+        recovery: '1 min Z1 (Caminhada/Trote leve)',
+        repetitions: 7,
+      },
+    ],
+  };
+}
+
+// ─── Gerador Principal do Plano Semanal (WeekPlan) ─────────────────────────
 
 export function generateWeekPlan(profile: UserProfile, weekNumber: number = 1): WeekPlan {
   const days = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
   const dayWorkouts: Record<string, DayWorkout> = {};
+
+  const fcZones = getFCZones(profile.age || 36);
+
+  // Instancia os treinos de Musculação do Atleta Híbrido (A a E)
+  const treinoA = buildTreinoA(profile);
+  const treinoB = buildTreinoB(profile);
+  const treinoC = buildTreinoC(profile);
+  const treinoD = buildTreinoD(profile);
+  const treinoE = buildTreinoE(profile);
+
+  // Instancia os treinos de Corrida por Zonas
+  const run13 = buildRunIntervalado13(profile);
+  const run12 = buildRunIntervalado12(profile);
+  const run11 = buildRunIntervalado11(profile);
+
+  // ─── Estrutura de Prescrição do Atleta Híbrido (PDF Oficial) ─────────────
+  // O plano é HÍBRIDO (5 Dias de Musculação A, B, C, D, E + Corrida nas Terças, Quintas e Sábados)
+  // Nos dias de corrida conjugada (Terça, Quinta e Sábado), prescrevemos o HybridWorkout ou a combinação perfeita!
+
+  dayWorkouts['segunda'] = treinoA; // Musculação Treino A (Inferiores + Abs)
   
-  // Determine structure based on goal and availability
-  const { primaryGoal, daysPerWeek, runnerLevel } = profile;
-  const hasRunning = runnerLevel !== 'nenhum';
-  
-  let schedule: string[] = [];
-  
-  if (daysPerWeek === 3) {
-    schedule = generateSchedule3Days(primaryGoal, hasRunning);
-  } else if (daysPerWeek === 4) {
-    schedule = generateSchedule4Days(primaryGoal, hasRunning);
-  } else if (daysPerWeek === 5) {
-    schedule = generateSchedule5Days(primaryGoal, hasRunning);
-  } else {
-    schedule = generateSchedule6Days(primaryGoal, hasRunning);
-  }
-  
-  // Assign workouts to days
-  days.forEach((day, index) => {
-    const workoutType = schedule[index] || 'rest';
-    dayWorkouts[day] = assignWorkout(day, workoutType, profile, weekNumber);
+  dayWorkouts['terca'] = {
+    type: 'hibrido',
+    title: 'Treino B (Peito/Ombro/Bíceps) + Corrida Intervalada 1:3',
+    description: 'Sessão dupla: Musculação Treino B + Corrida Intervalada 1:3 Moderada em Zonas Z1/Z3.',
+    strength: treinoB,
+    run: run13,
+  } as HybridWorkout;
+
+  dayWorkouts['quarta'] = treinoC; // Musculação Treino C (Costas + Tríceps)
+
+  dayWorkouts['quinta'] = {
+    type: 'hibrido',
+    title: 'Treino D (Peito/Ombro/Bíceps) + Corrida Intervalada 1:2',
+    description: 'Sessão dupla: Musculação Treino D + Corrida Intervalada 1:2 Moderada em Zonas Z1/Z3.',
+    strength: treinoD,
+    run: run12,
+  } as HybridWorkout;
+
+  dayWorkouts['sexta'] = treinoE; // Musculação Treino E (Costas + Tríceps)
+
+  dayWorkouts['sabado'] = {
+    type: 'hibrido',
+    title: 'Corrida Intervalada 1:1 + Core / Mobilidade',
+    description: 'Corrida Intervalada 1:1 Moderada (7x 1min Z3 + 1min Z1) + Sessão de Core.',
+    strength: {
+      type: 'musculacao',
+      letter: 'A',
+      title: 'Core & Mobilidade de Fim de Semana',
+      description: 'Fortalecimento de abdominal, estabilidade lombar e soltura miofascial.',
+      focus: ['core', 'pernas'],
+      exercises: treinoA.exercises.filter(ex => ex.blockType === 'aquecimento' || ex.blockType === 'tabata'),
+      duration: 30,
+      intensity: 'baixa',
+      volume: 48,
+    },
+    run: run11,
+  } as HybridWorkout;
+
+  dayWorkouts['domingo'] = {
+    type: 'descanso',
+    title: 'Descanso Completo & Recuperação Metabólica',
+    description: 'O crescimento e a perda de gordura ocorrem no descanso. Sono (7-9h) e hidratação.',
+    activities: [
+      'Dormir 7 a 9 horas para restaurar o sistema nervoso central',
+      'Hidratação reforçada (35ml/kg de peso corporal)',
+      'Refeições com alta densidade nutricional e proteínas (2g/kg)',
+    ],
+  } as RestDay;
+
+  // Cálculo de volume total de repetições e km acumulados
+  let totalVolume = 0;
+  let totalKm = 0;
+
+  Object.values(dayWorkouts).forEach(workout => {
+    if (workout.type === 'musculacao') {
+      totalVolume += workout.volume;
+    } else if (workout.type === 'corrida') {
+      totalKm += workout.distance;
+    } else if (workout.type === 'hibrido') {
+      totalVolume += workout.strength.volume;
+      totalKm += workout.run.distance;
+    }
   });
-  
-  const allExercises = Object.values(dayWorkouts)
-    .filter((d): d is StrengthWorkout => d.type === 'musculacao')
-    .flatMap(d => d.exercises);
-  
-  const totalVolume = allExercises.reduce((sum, ex) => {
-    const reps = parseInt(ex.reps.split('-')[0]) || 10;
-    return sum + ex.sets * reps;
-  }, 0);
-  
-  const totalKm = Object.values(dayWorkouts)
-    .filter((d): d is RunWorkout => d.type === 'corrida')
-    .reduce((sum, d) => sum + d.distance, 0);
-  
+
   const now = new Date();
   const startDate = new Date(now);
   startDate.setDate(now.getDate() - now.getDay() + 1);
@@ -262,163 +572,19 @@ export function generateWeekPlan(profile: UserProfile, weekNumber: number = 1): 
     days: dayWorkouts,
     totalVolume,
     totalKm,
-    focusMuscles: getFocusMuscles(primaryGoal),
+    focusMuscles: ['peito', 'costas', 'pernas', 'ombros', 'gluteos', 'core'],
+    fcMaxCalculated: fcZones.fcMax,
+    fcZones: {
+      z1: fcZones.z1,
+      z2: fcZones.z2,
+      z3: fcZones.z3,
+      z4: fcZones.z4,
+      z5: fcZones.z5,
+    },
   };
 }
 
-function generateSchedule3Days(goal: string, hasRun: boolean): string[] {
-  // [seg, ter, qua, qui, sex, sab, dom]
-  if (!hasRun) return ['upper', 'rest', 'lower', 'rest', 'full', 'rest_active', 'rest'];
-  if (goal === 'hipertrofia') return ['upper', 'run_leve', 'lower', 'rest', 'full', 'rest_active', 'rest'];
-  if (goal === 'performance') return ['upper', 'run_intervalado', 'lower', 'rest_active', 'run_longao', 'rest', 'rest'];
-  return ['upper', 'run_leve', 'lower', 'rest', 'run_intervalado', 'rest_active', 'rest'];
-}
-
-function generateSchedule4Days(goal: string, hasRun: boolean): string[] {
-  if (!hasRun) return ['push', 'pull', 'rest', 'legs', 'rest', 'full', 'rest'];
-  if (goal === 'hipertrofia') return ['push', 'run_leve', 'pull', 'legs', 'rest', 'run_longao', 'rest'];
-  if (goal === 'performance') return ['upper', 'run_intervalado', 'lower', 'rest', 'run_tempo', 'upper', 'rest'];
-  return ['push', 'run_leve', 'pull_legs', 'rest', 'run_intervalado', 'full', 'rest'];
-}
-
-function generateSchedule5Days(goal: string, hasRun: boolean): string[] {
-  if (!hasRun) return ['chest_shoulders', 'back_biceps', 'legs', 'push', 'pull', 'rest_active', 'rest'];
-  if (goal === 'hipertrofia') return ['chest_shoulders', 'run_leve', 'back_biceps', 'legs', 'run_leve', 'shoulders_arms', 'rest'];
-  if (goal === 'performance') return ['upper', 'run_intervalado', 'lower', 'run_leve', 'upper', 'run_longao', 'rest'];
-  return ['chest_shoulders', 'run_intervalado', 'back_biceps', 'legs', 'run_leve', 'full', 'rest'];
-}
-
-function generateSchedule6Days(goal: string, hasRun: boolean): string[] {
-  if (goal === 'hipertrofia') return ['chest_shoulders', 'back_biceps', 'legs', 'run_leve', 'push', 'pull_legs', 'rest'];
-  if (goal === 'performance') return ['upper', 'run_intervalado', 'lower', 'run_leve', 'upper', 'run_longao', 'rest'];
-  return ['chest_shoulders', 'run_intervalado', 'back_biceps', 'legs', 'run_leve', 'full', 'rest'];
-}
-
-function assignWorkout(day: string, type: string, profile: UserProfile, week: number): DayWorkout {
-  const level = profile.experienceLevel;
-  
-  switch(type) {
-    case 'upper':
-      return buildStrengthWorkout(
-        'Membros Superiores',
-        'Treino completo de peito, costas, ombros e braços para máxima hipertrofia do upper body.',
-        ['peito', 'costas', 'ombros'],
-        profile, 'alta'
-      );
-    case 'lower':
-      return buildStrengthWorkout(
-        'Membros Inferiores',
-        'Treino de pernas e glúteos com foco em força e volume para desenvolvimento da musculatura inferior.',
-        ['pernas', 'gluteos'],
-        profile, 'alta'
-      );
-    case 'push':
-      return buildStrengthWorkout(
-        'Push — Empurrar',
-        'Peito, ombros e tríceps em um treino sinérgico de alta eficiência.',
-        ['peito', 'ombros', 'triceps'],
-        profile, 'alta'
-      );
-    case 'pull':
-      return buildStrengthWorkout(
-        'Pull — Puxar',
-        'Costas e bíceps com foco em amplitude, espessura e definição.',
-        ['costas', 'biceps'],
-        profile, 'alta'
-      );
-    case 'legs':
-      return buildStrengthWorkout(
-        'Legs Day — Pernas & Glúteos',
-        'O treino mais importante da semana. Quadríceps, isquiotibiais e glúteos em máximo volume.',
-        ['pernas', 'gluteos'],
-        profile, 'alta'
-      );
-    case 'pull_legs':
-      return buildStrengthWorkout(
-        'Pull + Pernas',
-        'Costas, bíceps e trabalho complementar de pernas num treino eficiente.',
-        ['costas', 'pernas'],
-        profile, 'media'
-      );
-    case 'chest_shoulders':
-      return buildStrengthWorkout(
-        'Peito & Ombros',
-        'Upper anterior completo — peito e ombros com alta densidade de volume.',
-        ['peito', 'ombros'],
-        profile, 'alta'
-      );
-    case 'back_biceps':
-      return buildStrengthWorkout(
-        'Costas & Bíceps',
-        'Espessura e largura das costas com trabalho de bíceps. A combinação clássica.',
-        ['costas', 'biceps'],
-        profile, 'alta'
-      );
-    case 'shoulders_arms':
-      return buildStrengthWorkout(
-        'Ombros & Braços',
-        'Deltoides, bíceps e tríceps — foco em estética e definição dos braços.',
-        ['ombros', 'biceps', 'triceps'],
-        profile, 'media'
-      );
-    case 'full':
-    case 'full_body':
-      return buildStrengthWorkout(
-        'Full Body',
-        'Treino completo do corpo com exercícios compostos multiarticulares para máxima eficiência.',
-        ['peito', 'costas', 'pernas', 'ombros'],
-        profile, 'media'
-      );
-    case 'run_leve':
-      return buildRunWorkout(
-        'Corrida Leve — Zona 2',
-        'Corrida regenerativa em baixa intensidade. Constrói base aeróbia e acelera a recuperação muscular.',
-        'leve',
-        6,
-        profile
-      );
-    case 'run_intervalado':
-      return buildRunWorkout(
-        'Treino Intervalado',
-        'Série de tiros de alta intensidade alternados com recuperação. Aumenta VO2max e queima de gordura.',
-        'intervalado',
-        8,
-        profile
-      );
-    case 'run_longao':
-      return buildRunWorkout(
-        'Longão — Endurance',
-        'Corrida longa em ritmo confortável. Desenvolve resistência aeróbia, fortalece tendões e queima gordura.',
-        'longao',
-        12,
-        profile
-      );
-    case 'run_tempo':
-      return buildRunWorkout(
-        'Tempo Run',
-        'Corrida em ritmo limiar anaeróbico — desafiador mas sustentável. Melhora significativamente o pace.',
-        'tempo',
-        8,
-        profile
-      );
-    case 'rest_active':
-      return buildRestDay(true);
-    case 'rest':
-    default:
-      return buildRestDay(false);
-  }
-}
-
-function getFocusMuscles(goal: string): MuscleGroup[] {
-  switch(goal) {
-    case 'hipertrofia': return ['peito', 'costas', 'pernas', 'ombros'];
-    case 'perda_gordura': return ['full_body', 'core'];
-    case 'performance': return ['pernas', 'core', 'costas'];
-    default: return ['peito', 'costas', 'pernas', 'ombros', 'gluteos'];
-  }
-}
-
-// ─── Análise de Perfil ─────────────────────────────────────────────────────
+// ─── Análise de Perfil Fisiológico ─────────────────────────────────────────
 
 export interface ProfileAnalysis {
   bodyType: string;
@@ -435,56 +601,35 @@ export interface ProfileAnalysis {
 
 export function analyzeProfile(profile: UserProfile): ProfileAnalysis {
   const bmi = profile.weight / Math.pow(profile.height / 100, 2);
-  const bodyType = bmi < 18.5 ? 'Ectomorfo (abaixo do peso ideal)' :
-    bmi < 25 ? 'Peso saudável' :
-    bmi < 30 ? 'Sobrepeso leve' : 'Sobrepeso moderado/alto';
-  
-  const recommendations: string[] = [];
-  const warnings: string[] = [];
-  
-  // Nutrition recs
-  if (profile.primaryGoal === 'hipertrofia') {
-    recommendations.push('Consuma 2.0-2.4g de proteína por kg de peso corporal diariamente');
-    recommendations.push('Mantenha superávit calórico de 200-300 kcal/dia para ganho limpo');
-  } else if (profile.primaryGoal === 'perda_gordura') {
-    recommendations.push('Déficit calórico moderado de 300-500 kcal/dia');
-    recommendations.push('Proteína alta: 2.2-2.5g/kg para preservar massa muscular');
-  }
-  
-  recommendations.push('Priorize 7-9 horas de sono para otimizar hormônios anabólicos');
-  recommendations.push('Hidrate-se: mínimo 35ml por kg de peso corporal ao dia');
-  
-  if (profile.daysPerWeek < 4 && profile.primaryGoal === 'hipertrofia') {
-    warnings.push('Com menos de 4 dias/semana, o progresso em hipertrofia será mais lento. Considere aumentar a frequência.');
-  }
-  
-  if (profile.runnerLevel !== 'nenhum' && profile.primaryGoal === 'hipertrofia') {
-    warnings.push('Atenção ao efeito de interferência: evite corrida intensa antes de treinar pernas pesadas.');
-    recommendations.push('Se possível, separe corrida e musculação por 6+ horas para minimizar interferência.');
-  }
-  
-  if (profile.experienceLevel === 'iniciante') {
-    recommendations.push('Foque na técnica antes de aumentar cargas. A progressão virá naturalmente.');
-  }
-  
-  const strengthDays = profile.daysPerWeek - (profile.runnerLevel !== 'nenhum' ? Math.min(2, Math.floor(profile.daysPerWeek / 3)) : 0);
-  const runDays = profile.daysPerWeek - strengthDays;
-  const restDays = 7 - profile.daysPerWeek;
-  
-  const estimatedTimeToGoal = profile.primaryGoal === 'hipertrofia' ? '4-6 meses para resultados significativos' :
-    profile.primaryGoal === 'perda_gordura' ? '8-16 semanas para resultado sólido' :
-    '3-4 meses para evolução notável na performance';
-  
+  const bodyType = bmi < 18.5
+    ? 'Ectomorfo (Abaixo do peso ideal)'
+    : bmi < 25
+    ? 'Falso Magro / Recomposição Corporal'
+    : bmi < 30
+    ? 'Sobrepeso leve (Foco em Emagrecimento Híbrido)'
+    : 'Sobrepeso moderado';
+
+  const recommendations: string[] = [
+    'Siga rigorosamente as Zonas de Esforço (%FCmáx) na corrida para não catabolizar massa muscular.',
+    'Consuma entre 1.8g e 2.2g de proteína por kg de peso corporal diariamente.',
+    'Respeite as cadências e intervalos dos blocos metódicos (Pirâmide, Meta e Dropset).',
+    'Hidrate-se com no mínimo 3.5 litros de água por dia.',
+  ];
+
+  const warnings: string[] = [
+    'Atenção ao Efeito de Interferência: Mantenha a corrida em Z1/Z3 para preservar a resposta de síntese proteica (mTORC1).',
+  ];
+
   return {
     bodyType,
     recommendations,
     warnings,
-    focusAreas: getFocusMuscles(profile.primaryGoal).map(mg => 
-      mg === 'peito' ? 'Peitoral' : mg === 'costas' ? 'Costas' : 
-      mg === 'pernas' ? 'Pernas' : mg === 'ombros' ? 'Ombros' :
-      mg === 'gluteos' ? 'Glúteos' : 'Core'
-    ),
-    estimatedTimeToGoal,
-    weeklyLoad: { strengthDays, runDays, restDays },
+    focusAreas: ['Peitoral', 'Costas', 'Membros Inferiores', 'Deltoides', 'Core Híbrido'],
+    estimatedTimeToGoal: '8 a 12 semanas para recomposição corporal profunda',
+    weeklyLoad: {
+      strengthDays: 5,
+      runDays: 3,
+      restDays: 1,
+    },
   };
 }
