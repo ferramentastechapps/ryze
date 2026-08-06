@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles, LogOut, ShieldCheck } from 'lucide-react';
+import { Dumbbell, Activity, Flame, TrendingUp, ChevronRight, Play, Trophy, Zap, Sparkles, LogOut, ShieldCheck, Megaphone } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout } from '../types';
 import { getTodayWorkout, getProgressStats } from '../store/appStore';
 import { loadAICoach } from '../services/geminiService';
@@ -10,6 +10,7 @@ import SubscriptionBadge from '../components/SubscriptionBadge';
 import { XpBar } from '../components/XpBar';
 import { useAuthStore } from '../store/authStore';
 import { signOut } from '../services/authService';
+import { getGlobalAnnouncement, type GlobalAnnouncement } from '../services/announcementService';
 
 interface DashboardProps {
   state: AppState;
@@ -51,7 +52,12 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
   const navigate = useNavigate();
   const [demoExercise, setDemoExercise] = useState<{ id: string; name: string; muscleGroups: string[] } | null>(null);
   const [showTipModal, setShowTipModal] = useState(false);
+  const [announcement, setAnnouncement] = useState<GlobalAnnouncement | null>(null);
   const { profile, weekPlan, logs } = state;
+
+  useEffect(() => {
+    setAnnouncement(getGlobalAnnouncement());
+  }, []);
 
   const todayResult = getTodayWorkout(state);
   const stats = getProgressStats(logs);
@@ -115,6 +121,37 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
               }}>EVOLUIR?</span>
             </h1>
           </div>
+
+          {/* Global Announcement Banner from Admin */}
+          {announcement && announcement.active && (
+            <div className="animate-fade-in mb-6" style={{
+              padding: 16,
+              borderRadius: 'var(--radius-lg)',
+              background: announcement.type === 'warning' ? 'var(--accent-orange-dim)' : announcement.type === 'success' ? 'var(--accent-lime-dim)' : 'var(--bg-elevated)',
+              border: `1px solid ${announcement.type === 'warning' ? 'var(--accent-orange)' : announcement.type === 'success' ? 'var(--accent-lime)' : 'var(--border-medium)'}`,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: 10,
+                background: announcement.type === 'warning' ? 'rgba(255,95,31,0.2)' : announcement.type === 'success' ? 'rgba(200,255,0,0.2)' : 'rgba(59,130,246,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: announcement.type === 'warning' ? 'var(--accent-orange)' : announcement.type === 'success' ? 'var(--accent-lime)' : '#3b82f6',
+                flexShrink: 0,
+              }}>
+                <Megaphone size={18} />
+              </div>
+              <div>
+                <h4 style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 14, color: 'var(--text-primary)', margin: 0 }}>
+                  {announcement.title}
+                </h4>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, margin: 0 }}>
+                  {announcement.message}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* XpBar Widget */}
           <div className="animate-fade-in mb-6" style={{ animationDelay: '40ms' }}>

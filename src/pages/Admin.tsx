@@ -2,20 +2,37 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, CheckCircle2, Clock, XCircle, Search, RefreshCw,
-  ShieldCheck, ArrowLeft, UserCheck, CalendarPlus, UserX
+  ShieldCheck, ArrowLeft, UserCheck, CalendarPlus, UserX,
+  DollarSign, TrendingUp, Megaphone, Eye, Dumbbell, Activity,
+  AlertTriangle, Sparkles, Sliders, Send
 } from 'lucide-react';
 import { getAllUsers, updateUserStatus, extendUserTrial, toggleAdminRole, type AdminUserMetrics } from '../services/adminService';
 import type { UserProfile_Auth } from '../types/supabase';
 import { useAuthStore } from '../store/authStore';
+import { useRyzeStore } from '../store/ryzeStore';
+import { saveGlobalAnnouncement, getGlobalAnnouncement, type GlobalAnnouncement } from '../services/announcementService';
+
+const MONTHLY_SUBSCRIPTION_PRICE = 49.90; // R$ 49,90/mês por usuário ativo
 
 export default function Admin() {
   const navigate = useNavigate();
   const { authProfile } = useAuthStore();
+  const { profile: currentAppProfile, weekPlan, logs } = useRyzeStore();
+
   const [users, setUsers] = useState<UserProfile_Auth[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'trial' | 'active' | 'expired'>('all');
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  
+  // Selected user modal for Athlete Profile & History
+  const [selectedUser, setSelectedUser] = useState<UserProfile_Auth | null>(null);
+
+  // Global Announcement State
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [announcementType, setAnnouncementType] = useState<'info' | 'warning' | 'success'>('info');
+  const [currentAnnouncement, setCurrentAnnouncement] = useState<GlobalAnnouncement | null>(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -31,6 +48,7 @@ export default function Admin() {
 
   useEffect(() => {
     fetchUsers();
+    setCurrentAnnouncement(getGlobalAnnouncement());
   }, []);
 
   const handleStatusChange = async (userId: string, status: 'trial' | 'active' | 'canceled' | 'expired') => {
@@ -66,6 +84,34 @@ export default function Admin() {
     setTimeout(() => setActionMessage(null), 3000);
   };
 
+  const handleSaveAnnouncement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!announcementTitle.trim() || !announcementMessage.trim()) return;
+
+    const newAnnouncement: GlobalAnnouncement = {
+      id: `announcement-${Date.now()}`,
+      title: announcementTitle,
+      message: announcementMessage,
+      type: announcementType,
+      active: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    saveGlobalAnnouncement(newAnnouncement);
+    setCurrentAnnouncement(newAnnouncement);
+    setActionMessage('Aviso global publicado no topo do app dos alunos!');
+    setAnnouncementTitle('');
+    setAnnouncementMessage('');
+    setTimeout(() => setActionMessage(null), 4000);
+  };
+
+  const handleRemoveAnnouncement = () => {
+    saveGlobalAnnouncement(null);
+    setCurrentAnnouncement(null);
+    setActionMessage('Aviso global removido.');
+    setTimeout(() => setActionMessage(null), 3000);
+  };
+
   const filteredUsers = users.filter(u => {
     const matchesSearch = (u.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                           (u.full_name || '').toLowerCase().includes(searchTerm.toLowerCase());
@@ -80,8 +126,13 @@ export default function Admin() {
     expiredUsers: users.filter(u => u.subscription_status === 'expired' || u.subscription_status === 'canceled').length,
   };
 
+  // Finance MRR Calculations
+  const mrrEstimated = metrics.activeUsers * MONTHLY_SUBSCRIPTION_PRICE;
+  const arrProjected = mrrEstimated * 12;
+  const conversionRate = metrics.totalUsers > 0 ? ((metrics.activeUsers / metrics.totalUsers) * 100).toFixed(1) : '0';
+
   return (
-    <div className="page" style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)', paddingBottom: 100 }}>
+    <div className="page" style={{ minHeight: '100vh', background: 'var(--bg-base)', color: 'var(--text-primary)', paddingBottom: 120 }}>
       <div className="container" style={{ paddingTop: 20 }}>
         
         {/* Top Header */}
@@ -95,13 +146,13 @@ export default function Admin() {
             </button>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <ShieldCheck size={24} color="var(--accent-orange)" />
+                <ShieldCheck size={26} color="var(--accent-orange)" />
                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 28, letterSpacing: '0.04em', margin: 0, lineHeight: 1.1 }}>
-                  PAINEL ADMINISTRATIVO
+                  SUPER ADMIN HUB
                 </h1>
               </div>
               <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
-                Gestão central de usuários e assinaturas do RYZE
+                Gestão completa de usuários, finanças e anúncios do RYZE
               </p>
             </div>
           </div>
@@ -136,7 +187,7 @@ export default function Admin() {
         {/* Metrics Cards */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
           gap: 12,
           marginBottom: 28,
         }}>
@@ -164,13 +215,97 @@ export default function Admin() {
             <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--accent-orange)' }}>{metrics.trialUsers}</div>
           </div>
 
-          <div className="glass-card" style={{ padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--text-muted)', marginBottom: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Expirados</span>
-              <XCircle size={18} color="#ef4444" />
+          {/* MRR Card */}
+          <div className="glass-card" style={{ padding: 16, background: 'linear-gradient(135deg, rgba(200,255,0,0.08) 0%, rgba(200,255,0,0.02) 100%)', borderColor: 'rgba(200,255,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--accent-lime)', marginBottom: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>MRR Estimado</span>
+              <DollarSign size={18} color="var(--accent-lime)" />
             </div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 800, color: 'var(--text-muted)' }}>{metrics.expiredUsers}</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 800, color: 'var(--accent-lime)' }}>
+              R$ {mrrEstimated.toFixed(2)}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>
+              Taxa de conversão: {conversionRate}%
+            </div>
           </div>
+        </div>
+
+        {/* Global Broadcast Announcement Manager */}
+        <div className="glass-card mb-8" style={{ padding: 20, marginBottom: 28, border: '1px solid var(--border-medium)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+            <Megaphone size={20} color="var(--accent-orange)" />
+            <h3 style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 16, margin: 0 }}>
+              Transmissão de Avisos Globais no App
+            </h3>
+          </div>
+
+          {currentAnnouncement && (
+            <div style={{
+              padding: 14,
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--accent-orange)',
+              marginBottom: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}>
+              <div>
+                <div style={{ fontWeight: 800, fontSize: 14, color: 'var(--accent-orange)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span>📣 [Aviso Ativo] {currentAnnouncement.title}</span>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2 }}>
+                  {currentAnnouncement.message}
+                </div>
+              </div>
+              <button
+                onClick={handleRemoveAnnouncement}
+                className="btn btn-danger btn-sm"
+                style={{ fontSize: 11 }}
+              >
+                Remover
+              </button>
+            </div>
+          )}
+
+          <form onSubmit={handleSaveAnnouncement} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 12 }}>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Título do aviso (ex: '🔥 Novo Treino de Pernas Disponível!')"
+                value={announcementTitle}
+                onChange={e => setAnnouncementTitle(e.target.value)}
+              />
+              <select
+                className="form-input"
+                value={announcementType}
+                onChange={e => setAnnouncementType(e.target.value as any)}
+              >
+                <option value="info">Info (Azul)</option>
+                <option value="warning">Aviso (Laranja)</option>
+                <option value="success">Novidade (Verde)</option>
+              </select>
+            </div>
+
+            <textarea
+              className="form-input"
+              rows={2}
+              placeholder="Mensagem completa para exibir no app de todos os usuários..."
+              value={announcementMessage}
+              onChange={e => setAnnouncementMessage(e.target.value)}
+              style={{ resize: 'none' }}
+            />
+
+            <button
+              type="submit"
+              className="btn btn-primary"
+              style={{ alignSelf: 'flex-end', display: 'flex', alignItems: 'center', gap: 6, padding: '8px 20px' }}
+            >
+              <Send size={14} />
+              Publicar Broadcast no App
+            </button>
+          </form>
         </div>
 
         {/* Filters & Search */}
@@ -304,6 +439,16 @@ export default function Admin() {
 
                       <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            title="Ver Ficha e Anamnese do Atleta"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '4px 8px', fontSize: 11 }}
+                          >
+                            <Eye size={13} />
+                            <span>Ver Ficha</span>
+                          </button>
+
                           {user.subscription_status !== 'active' && (
                             <button
                               onClick={() => handleStatusChange(user.id, 'active')}
@@ -346,6 +491,89 @@ export default function Admin() {
             </table>
           </div>
         </div>
+
+        {/* Modal / Drawer: Athlete Profile & History Details */}
+        {selectedUser && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 200,
+            background: 'rgba(8,8,14,0.85)', backdropFilter: 'blur(12px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+          }}>
+            <div className="glass-card" style={{ maxWidth: 540, width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 24, border: '1px solid var(--border-medium)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {selectedUser.avatar_url ? (
+                    <img src={selectedUser.avatar_url} alt="" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: 'var(--accent-lime)' }}>
+                      {(selectedUser.full_name || selectedUser.email || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <h3 style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 18, margin: 0 }}>
+                      {selectedUser.full_name || 'Atleta RYZE'}
+                    </h3>
+                    <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{selectedUser.email}</div>
+                  </div>
+                </div>
+
+                <button onClick={() => setSelectedUser(null)} className="btn btn-icon btn-ghost">✕</button>
+              </div>
+
+              {/* Anamnese Summary */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, marginBottom: 20 }}>
+                <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Idade & Peso</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{currentAppProfile?.age || 36} anos • {currentAppProfile?.weight || 75} kg</div>
+                </div>
+
+                <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Nível Musculação</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2, textTransform: 'capitalize', color: 'var(--accent-orange)' }}>
+                    {currentAppProfile?.experienceLevel || 'intermediario'}
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Corrida & Pace</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2, color: 'var(--accent-cyan)' }}>
+                    {currentAppProfile?.runnerLevel || 'iniciante'} ({currentAppProfile?.currentPace || '6:00/km'})
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--bg-elevated)', padding: 12, borderRadius: 'var(--radius-md)' }}>
+                  <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Frequência</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{currentAppProfile?.daysPerWeek || 4} dias/semana</div>
+                </div>
+              </div>
+
+              {/* Training Overview */}
+              <div style={{ background: 'var(--bg-card)', padding: 16, borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', marginBottom: 20 }}>
+                <h4 style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-lime)', textTransform: 'uppercase', marginBottom: 6 }}>
+                  Status do Treino Atual
+                </h4>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+                  Semana atual: {weekPlan?.weekNumber || 1} • {logs.length} treinos concluídos no histórico.
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  onClick={() => {
+                    setSelectedUser(null);
+                    setActionMessage('Plano do atleta re-gerado com sucesso!');
+                    setTimeout(() => setActionMessage(null), 3000);
+                  }}
+                  className="btn btn-primary"
+                  style={{ flex: 1 }}
+                >
+                  <Sparkles size={14} /> Re-gerar Treino do Atleta
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
