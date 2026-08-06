@@ -10,7 +10,7 @@ import { useAuthStore } from '../store/authStore';
 
 export default function Admin() {
   const navigate = useNavigate();
-  const { userProfile } = useAuthStore();
+  const { authProfile } = useAuthStore();
   const [users, setUsers] = useState<UserProfile_Auth[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

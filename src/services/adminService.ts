@@ -26,8 +26,7 @@ export async function updateUserStatus(
   userId: string,
   newStatus: 'trial' | 'active' | 'canceled' | 'expired'
 ): Promise<void> {
-  const { error } = await supabase
-    .from('profiles')
+  const { error } = await (supabase.from('profiles') as any)
     .update({ subscription_status: newStatus, updated_at: new Date().toISOString() })
     .eq('id', userId);
 
@@ -38,8 +37,7 @@ export async function extendUserTrial(userId: string, days: number = 30): Promis
   const newEndDate = new Date();
   newEndDate.setDate(newEndDate.getDate() + days);
 
-  const { error } = await supabase
-    .from('profiles')
+  const { error } = await (supabase.from('profiles') as any)
     .update({
       subscription_status: 'trial',
       trial_end_date: newEndDate.toISOString(),
@@ -51,8 +49,7 @@ export async function extendUserTrial(userId: string, days: number = 30): Promis
 }
 
 export async function toggleAdminRole(userId: string, isAdmin: boolean): Promise<void> {
-  const { error } = await supabase
-    .from('profiles')
+  const { error } = await (supabase.from('profiles') as any)
     .update({ is_admin: isAdmin, updated_at: new Date().toISOString() })
     .eq('id', userId);
 

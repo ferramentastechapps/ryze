@@ -70,6 +70,29 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
         </div>
 
         {/* Header */}
+        <div className="animate-fade-in" style={{ paddingBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>
+            SEMANA {weekPlan.weekNumber}
+          </div>
+          <h1 className="page-title">
+            PLANO<br />
+            <span style={{
+              background: 'var(--gradient-lime)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+            }}>SEMANAL</span>
+          </h1>
+
+          {/* Week summary badges */}
+          <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
+            <span className="badge badge-orange">
+              <Dumbbell size={11} />
+              {WEEK_DAYS.filter(d => weekPlan.days[d]?.type === 'musculacao' || weekPlan.days[d]?.type === 'hibrido').length} musculação
+            </span>
+            <span className="badge badge-cyan">
+              <Activity size={11} />
+              {WEEK_DAYS.filter(d => weekPlan.days[d]?.type === 'corrida' || weekPlan.days[d]?.type === 'hibrido').length} corridas
             </span>
             <span className="badge badge-purple">
               <Zap size={11} />
@@ -77,6 +100,21 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
             </span>
           </div>
         </div>
+
+        {/* Banner de Semana de Deload */}
+        {weekPlan.weekNumber > 0 && weekPlan.weekNumber % 4 === 0 && (
+          <div className="animate-fade-in mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black shrink-0">
+              ⚡
+            </div>
+            <div>
+              <h4 className="font-extrabold text-amber-300 text-sm">Semana de Deload Ativa</h4>
+              <p className="text-xs text-zinc-300">
+                Volume de séries reduzido em 40% para supercompensação muscular e recuperação das articulações.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Day cards */}
         <div className="stagger-children" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
