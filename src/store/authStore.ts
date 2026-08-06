@@ -75,21 +75,26 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       // Resolve o problema de clock skew e erros internos de fetch no gotrue-js
       if (hasTokenInHash) {
         try {
-          const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+          const rawHash = window.location.hash.slice(1);
+          const hashParams = new URLSearchParams(rawHash);
           const access_token = hashParams.get('access_token');
           const refresh_token = hashParams.get('refresh_token');
 
           if (access_token) {
-            console.log('[AuthStore] Autenticando com access_token da URL via Supabase REST...');
-            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
-            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
+            const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string)?.trim();
+            const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string)?.trim();
+
+            const headersEnviados = {
+              Authorization: `Bearer ${access_token}`,
+              apikey: supabaseAnonKey,
+            };
+
+            console.log('[DEBUG] token bruto:', JSON.stringify(access_token));
+            console.log('[DEBUG] headers enviados:', JSON.stringify(headersEnviados));
 
             // Chamada nativa direta para a API REST do Supabase (/auth/v1/user)
             const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
-              headers: {
-                Authorization: `Bearer ${access_token}`,
-                apikey: supabaseAnonKey,
-              },
+              headers: headersEnviados,
             });
 
             if (userRes.ok) {
