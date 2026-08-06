@@ -72,7 +72,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       set({ authLoading: true });
 
       // ── 1. Resgate manual se há token OAuth na URL hash (#access_token=...) ──
-      // Resolve o problema de clock skew e erros de fetch no gotrue-js
+      // Resolve o problema de clock skew e erros internos de fetch no gotrue-js
       if (hasTokenInHash) {
         try {
           const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
@@ -80,23 +80,33 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
           const refresh_token = hashParams.get('refresh_token');
 
           if (access_token) {
-            console.log('[AuthStore] Autenticando com access_token da URL...');
-            // Valida o usuário diretamente com o servidor Supabase via Bearer token
-            const { data: userData, error: userError } = await supabase.auth.getUser(access_token);
+            console.log('[AuthStore] Autenticando com access_token da URL via Supabase REST...');
+            const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
+            const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-            if (userData?.user && !userError) {
-              console.log('[AuthStore] Usuário autenticado com sucesso via getUser:', userData.user.email);
+            // Chamada nativa direta para a API REST do Supabase (/auth/v1/user)
+            const userRes = await fetch(`${supabaseUrl}/auth/v1/user`, {
+              headers: {
+                Authorization: `Bearer ${access_token}`,
+                apikey: supabaseAnonKey,
+              },
+            });
 
+            if (userRes.ok) {
+              const user = (await userRes.json()) as User;
+              console.log('[AuthStore] Usuário autenticado com sucesso via REST API:', user.email);
+
+              // Tenta persistir a sessão localmente se houver refresh token
               if (refresh_token) {
                 await supabase.auth.setSession({ access_token, refresh_token }).catch(() => {});
               }
 
               window.history.replaceState(null, '', window.location.pathname);
-              const { profile, status } = await buildSession(userData.user);
-              set({ user: userData.user, authProfile: profile, accessStatus: status, authLoading: false });
+              const { profile, status } = await buildSession(user);
+              set({ user, authProfile: profile, accessStatus: status, authLoading: false });
               return;
             } else {
-              console.warn('[AuthStore] Erro ao validar access_token via getUser:', userError?.message);
+              console.warn('[AuthStore] Erro ao validar access_token via REST:', userRes.status, userRes.statusText);
             }
           }
         } catch (err) {
