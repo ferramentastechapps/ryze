@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, RotateCcw, Camera, Activity, Sparkles, Zap } from 'lucide-react';
+import { Play, Pause, RotateCcw, Camera, Activity, Sparkles, Zap, Loader2, Film } from 'lucide-react';
 import type { ExerciseGuide } from '../data/exerciseGuides';
 import Exercise3DViewer from './Exercise3DViewer';
 import type { CameraPreset } from './Exercise3DViewer';
 import { getExerciseGLBUrl } from '../services/exerciseAssetService';
+import { getExerciseGifUrl } from '../services/exerciseDbService';
 
 interface ExerciseDemonstratorProps {
   guide: ExerciseGuide;
@@ -17,6 +18,146 @@ const MUSCLE_COLORS = {
   body: '#2C2C2E',       // Cinza Escuro (Estrutura Corporal / Osso)
   bodyAccent: '#3A3A3C', // Cinza Médio (Contorno)
 };
+
+// ─── EXERCISEDB GIF VIEWER COMPONENT ───
+function ExerciseGifViewer({
+  exerciseDbId,
+  guideName,
+  isPlaying,
+  onError,
+}: {
+  exerciseDbId: string;
+  guideName: string;
+  isPlaying: boolean;
+  onError: () => void;
+}) {
+  const [gifUrl, setGifUrl] = useState<string | null>(null);
+  const [loadingState, setLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
+
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingState('loading');
+
+    getExerciseGifUrl(exerciseDbId)
+      .then((url) => {
+        if (!isMounted) return;
+        if (url) {
+          setGifUrl(url);
+        } else {
+          setLoadingState('error');
+          onError();
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setLoadingState('error');
+        onError();
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [exerciseDbId]);
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: 280,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'radial-gradient(ellipse at center, rgba(28,28,45,0.95) 0%, rgba(8,8,14,0.98) 100%)',
+        overflow: 'hidden',
+      }}
+    >
+      {/* Background Subtle Grid */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          opacity: 0.04,
+          backgroundImage:
+            'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)',
+          backgroundSize: '20px 20px',
+        }}
+      />
+
+      {/* Dark Mode Skeleton / Spinner (Passo 5) */}
+      {loadingState === 'loading' && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 10,
+            zIndex: 2,
+          }}
+        >
+          <Loader2 size={32} color={MUSCLE_COLORS.primary} style={{ animation: 'spin 1s linear infinite' }} />
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-ui)', fontWeight: 700 }}>
+            Carregando GIF de Exercício Real...
+          </span>
+        </div>
+      )}
+
+      {/* Real Exercise GIF (Passo 1 & 4) */}
+      {gifUrl && (
+        <img
+          src={gifUrl}
+          alt={`GIF de demonstração do exercício ${guideName}`}
+          onLoad={() => setLoadingState('loaded')}
+          onError={() => {
+            setLoadingState('error');
+            onError();
+          }}
+          style={{
+            maxHeight: '92%',
+            maxWidth: '92%',
+            objectFit: 'contain',
+            borderRadius: 'var(--radius-md)',
+            display: loadingState === 'loaded' ? 'block' : 'none',
+            filter: isPlaying ? 'none' : 'grayscale(40%) brightness(0.7)',
+            transition: 'filter 0.3s ease',
+            zIndex: 1,
+          }}
+        />
+      )}
+
+      {/* Badge "GIF REAL" (Estilo 3D REAL-TIME) */}
+      {loadingState === 'loaded' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 12,
+            left: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '5px 12px',
+            borderRadius: 'var(--radius-full)',
+            background: 'rgba(8,8,14,0.85)',
+            backdropFilter: 'blur(12px)',
+            border: `1px solid ${MUSCLE_COLORS.primary}66`,
+            fontSize: 10,
+            fontFamily: 'var(--font-ui)',
+            fontWeight: 900,
+            color: MUSCLE_COLORS.primary,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            zIndex: 5,
+            pointerEvents: 'none',
+          }}
+        >
+          <Film size={12} color={MUSCLE_COLORS.primary} />
+          GIF REAL
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── HIGH-PRECISION ANIMATED EXERCISE MOTION ENGINE (SVG FALLBACK 60FPS) ──
 function AnimatedMotionEngine({ guide, isPlaying, speedMultiplier, cameraPreset, resetSignal }: {
@@ -293,12 +434,14 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
   const [cameraPreset, setCameraPreset] = useState<CameraPreset>('angle');
   const [resetSignal, setResetSignal] = useState(0);
   const [use3D, setUse3D] = useState(guide.has3d);
+  const [gifFailed, setGifFailed] = useState(false);
 
   const glbUrl = guide.glbUrl ?? getExerciseGLBUrl(guide.id);
 
   useEffect(() => {
     setUse3D(!!guide.has3d);
-  }, [guide.id, guide.has3d]);
+    setGifFailed(false);
+  }, [guide.id, guide.has3d, guide.exerciseDbId]);
 
   const handleReset = () => {
     setResetSignal(prev => prev + 1);
@@ -337,6 +480,13 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
             resetSignal={resetSignal}
             height={320}
             onError={() => setUse3D(false)}
+          />
+        ) : guide.exerciseDbId && !gifFailed ? (
+          <ExerciseGifViewer
+            exerciseDbId={guide.exerciseDbId}
+            guideName={guide.name}
+            isPlaying={isPlaying}
+            onError={() => setGifFailed(true)}
           />
         ) : (
           <AnimatedMotionEngine
@@ -439,7 +589,13 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
           flexWrap: 'wrap', gap: 10, paddingTop: 10,
           borderTop: '1px solid rgba(255,255,255,0.05)',
         }}>
-          {/* Câmeras */}
+          {/* 
+            Câmeras / Seletor de Ângulo
+            NOTA / LIMITAÇÃO CONHECIDA: O seletor de ângulo (Frente/45°/Lado) permanece visível na UI 
+            para manter consistência e funcionalidade no modelo 3D e no fallback SVG. 
+            Contudo, quando um GIF 2D da ExerciseDB estiver ativo, a troca de ângulo não alterará 
+            a perspectiva do GIF, pois a mídia enviada pela API é um GIF plano 2D.
+          */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Camera size={13} color="var(--text-muted)" style={{ marginRight: 2 }} />
             {cameraOptions.map(cam => (

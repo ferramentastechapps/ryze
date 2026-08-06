@@ -26,6 +26,24 @@ export interface ExerciseGuide {
   has3d: boolean;
   /** URL customizada do GLB (opcional — se omitida, usa URL padrão do Supabase Storage) */
   glbUrl?: string;
+  /**
+   * ID do exercício na ExerciseDB (https://oss.exercisedb.dev).
+   * Preenchido manualmente com IDs confirmados via API — nunca por fuzzy match.
+   * null = exercício sem correspondência confirmada → usa fallback SVG.
+   *
+   * Mapeamento feito em: 2026-08-06
+   * Para adicionar um novo exercício:
+   *   1. Busque em https://oss.exercisedb.dev/api/v1/exercises/search?search=TERMO
+   *   2. Confirme que o nome/equipamento/músculo-alvo batem com o exercício local
+   *   3. Preencha o exerciseDbId aqui
+   */
+  exerciseDbId?: string | null;
+  /**
+   * Cache local da gifUrl resolvida via ExerciseDB.
+   * Preenchido em runtime pelo exerciseDbService e persistido em localStorage.
+   * Não editar manualmente — é gerenciado pelo serviço.
+   */
+  gifUrl?: string | null;
   /** Músculos estabilizadores e de suporte postural */
   stabilizers?: string[];
   /** Articulações principais envolvidas no movimento */
@@ -100,6 +118,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'peito',
     motionType: 'bench_press',
     has3d: false, // Mude para true após upload do GLB no Supabase Storage
+    exerciseDbId: 'EIeI8Vf', // ExerciseDB: "barbell bench press" — confirmado 2026-08-06
     primaryMuscles: ['Peitoral Maior (Esternal & Clavicular)', 'Serrátil Anterior'],
     secondaryMuscles: ['Tríceps Braquial', 'Deltoide Anterior'],
     equipmentNeeded: 'Barra Olímpica + Banco Reto',
@@ -136,6 +155,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'peito',
     motionType: 'bench_press',
     has3d: false,
+    exerciseDbId: '3TZduzM', // ExerciseDB: "barbell incline bench press" — confirmado 2026-08-06
     primaryMuscles: ['Peitoral Superior (Porção Clavicular)'],
     secondaryMuscles: ['Deltoide Anterior', 'Tríceps Braquial'],
     equipmentNeeded: 'Halteres + Banco Inclinado (30°-45°)',
@@ -169,6 +189,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'pernas',
     motionType: 'squat',
     has3d: false,
+    exerciseDbId: 'qXTaZnJ', // ExerciseDB: "barbell full squat" — confirmado 2026-08-06
     primaryMuscles: ['Quadríceps (Vasto Lateral, Medial, Intermédio)', 'Glúteo Máximo'],
     secondaryMuscles: ['Isquiotibiais', 'Eretores da Espinha', 'Core / Abdômen'],
     equipmentNeeded: 'Barra Olímpica + RACK de Agachamento',
@@ -203,6 +224,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'costas',
     motionType: 'pull_up',
     has3d: false,
+    exerciseDbId: 'lBDjFxJ', // ExerciseDB: "pull-up" — confirmado 2026-08-06
     primaryMuscles: ['Latíssimo do Dorso (Grande Dorsal)', 'Romboides'],
     secondaryMuscles: ['Bíceps Braquial', 'Braquiorradial', 'Trapézio'],
     equipmentNeeded: 'Barra Fixa',
@@ -237,6 +259,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'gluteos',
     motionType: 'hip_thrust',
     has3d: false,
+    exerciseDbId: null, // ExerciseDB free não tem barbell hip thrust — fallback SVG
     primaryMuscles: ['Glúteo Máximo', 'Glúteo Médio'],
     secondaryMuscles: ['Isquiotibiais', 'Quadríceps', 'Adutor Magno'],
     equipmentNeeded: 'Barra Olímpica + Banco + Protetor',
@@ -270,6 +293,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'ombros',
     motionType: 'overhead_press',
     has3d: false,
+    exerciseDbId: '5vfAI0I', // ExerciseDB: "dumbbell scott press" (seated DB shoulder press) — confirmado 2026-08-06
     primaryMuscles: ['Deltoide Anterior', 'Deltoide Lateral'],
     secondaryMuscles: ['Tríceps Braquial', 'Trapézio Superior'],
     equipmentNeeded: 'Halteres + Banco Ajustável',
@@ -297,6 +321,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'biceps',
     motionType: 'bicep_curl',
     has3d: false,
+    exerciseDbId: '25GPyDY', // ExerciseDB: "barbell curl" — confirmado 2026-08-06
     primaryMuscles: ['Bíceps Braquial'],
     secondaryMuscles: ['Braquial', 'Braquiorradial'],
     equipmentNeeded: 'Barra W / Barra Reta',
@@ -324,6 +349,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'triceps',
     motionType: 'tricep_extension',
     has3d: false,
+    exerciseDbId: 'yRLPCLu', // ExerciseDB: "barbell reverse grip skullcrusher" — confirmado 2026-08-06
     primaryMuscles: ['Tríceps Braquial (Todas as cabeças)'],
     secondaryMuscles: ['Ancôneo'],
     equipmentNeeded: 'Barra W + Banco Reto',
@@ -350,6 +376,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'pernas',
     motionType: 'squat',
     has3d: false,
+    exerciseDbId: '10Z2DXU', // ExerciseDB: "sled 45° leg press" — confirmado 2026-08-06
     primaryMuscles: ['Quadríceps'],
     secondaryMuscles: ['Glúteo Máximo', 'Isquiotibiais'],
     equipmentNeeded: 'Máquina Leg Press 45°',
@@ -371,6 +398,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'costas',
     motionType: 'pull_up',
     has3d: false,
+    exerciseDbId: 'eZyBC3j', // ExerciseDB: "barbell bent over row" — confirmado 2026-08-06
     primaryMuscles: ['Latíssimo do Dorso', 'Romboides'],
     secondaryMuscles: ['Bíceps Braquial', 'Deltoide Posterior', 'Eretores'],
     equipmentNeeded: 'Barra Olímpica',
@@ -392,6 +420,7 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
     category: 'ombros',
     motionType: 'overhead_press',
     has3d: false,
+    exerciseDbId: 'DsgkuIt', // ExerciseDB: "dumbbell lateral raise" — confirmado 2026-08-06
     primaryMuscles: ['Deltoide Lateral'],
     secondaryMuscles: ['Deltoide Anterior', 'Trapézio Superior'],
     equipmentNeeded: 'Halteres',
