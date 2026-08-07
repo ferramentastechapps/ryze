@@ -6,13 +6,19 @@ interface AdminGuardProps {
   children: React.ReactNode;
 }
 
+const ADMIN_EMAILS = ['ferramentastech.apps@gmail.com'];
+
 export const AdminGuard: React.FC<AdminGuardProps> = ({ children }) => {
-  const { authProfile, authLoading } = useAuthStore();
+  const { authProfile, user, authLoading } = useAuthStore();
 
   if (authLoading) return null;
 
-  // Verifica permissão admin no Supabase
-  if (!authProfile || !authProfile.is_admin) {
+  const currentEmail = (authProfile?.email || user?.email || '').toLowerCase();
+  const isAdminEmail = ADMIN_EMAILS.includes(currentEmail);
+  const isAdminFlag = !!authProfile?.is_admin;
+
+  // Garante que se o email for ferramentastech.apps@gmail.com ou tiver is_admin = true no Supabase, tem acesso garantido!
+  if (!isAdminFlag && !isAdminEmail) {
     return <Navigate to="/dashboard" replace />;
   }
 

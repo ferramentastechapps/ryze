@@ -647,7 +647,7 @@ function DashboardHeader() {
       <img src="/logo-capa.png" alt="RYZE" style={{ height: 36, width: 'auto', objectFit: 'contain' }} />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        {authProfile?.is_admin && (
+        {(authProfile?.is_admin || (user?.email && user.email.toLowerCase() === 'ferramentastech.apps@gmail.com')) && (
           <button
             onClick={() => navigate('/admin')}
             title="Painel Admin"
