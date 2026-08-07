@@ -482,7 +482,9 @@ export function generateWeekPlan(profile: UserProfile, weekNumber: number = 1): 
   const fcZones = getFCZones(age);
   const isBeginner = profile.experienceLevel === 'iniciante';
   const isAdvanced = profile.experienceLevel === 'avancado';
-  const hasRunning = profile.runnerLevel !== 'nenhum';
+  // No RYZE, todos os planos são HÍBRIDOS (Musculação + Corrida). Se o atleta não tem nível de corrida, assume 'iniciante' (Z1/Z3 trote/caminhada).
+  const hasRunning = true;
+  const effectiveRunnerLevel = (!profile.runnerLevel || profile.runnerLevel === 'nenhum') ? 'iniciante' : profile.runnerLevel;
   const daysPerWeek = profile.daysPerWeek || 5;
 
   // Instancia os treinos de Musculação do Atleta Híbrido (A a E)

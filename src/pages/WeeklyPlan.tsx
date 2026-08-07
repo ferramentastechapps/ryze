@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Activity, Zap, ChevronDown, ChevronUp, Play, RotateCcw, Clock, Info, BookOpen, Brain, TrendingUp, Heart, Flame, Wind } from 'lucide-react';
+import { Dumbbell, Activity, Zap, ChevronDown, ChevronUp, Play, RotateCcw, Clock, Info, BookOpen, Brain, TrendingUp, Heart, Flame, Wind, Sparkles, RefreshCw } from 'lucide-react';
 import type { AppState, DayWorkout, StrengthWorkout, RunWorkout, RestDay } from '../types';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
+import { useRyzeStore } from '../store/ryzeStore';
+import { saveProfile } from '../store/appStore';
 
 interface WeeklyPlanProps {
   state: AppState;
@@ -29,9 +31,10 @@ const DAY_FULL: Record<string, string> = {
   domingo: 'Domingo',
 };
 
-export default function WeeklyPlan({ state }: WeeklyPlanProps) {
+export default function WeeklyPlan({ state, onUpdate }: WeeklyPlanProps) {
   const navigate = useNavigate();
   const { weekPlan, logs } = state;
+  const setProfile = useRyzeStore(s => s.setProfile);
   const [expandedDay, setExpandedDay] = useState<string | null>(null);
   const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
 
@@ -47,6 +50,17 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
     });
   };
 
+  const handleActivateRunning = () => {
+    if (!state.profile) return;
+    const updatedProfile = {
+      ...state.profile,
+      runnerLevel: (state.profile.runnerLevel === 'nenhum' || !state.profile.runnerLevel) ? 'iniciante' : state.profile.runnerLevel,
+    };
+    saveProfile(updatedProfile);
+    setProfile(updatedProfile);
+    onUpdate();
+  };
+
   if (!weekPlan) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -54,6 +68,8 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
       </div>
     );
   }
+
+  const corridasCount = WEEK_DAYS.filter(d => weekPlan.days[d]?.type === 'corrida' || weekPlan.days[d]?.type === 'hibrido').length;
 
   return (
     <div className="page">
@@ -74,15 +90,27 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 8 }}>
             SEMANA {weekPlan.weekNumber}
           </div>
-          <h1 className="page-title">
-            PLANO<br />
-            <span style={{
-              background: 'var(--gradient-lime)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-            }}>SEMANAL</span>
-          </h1>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <h1 className="page-title">
+              PLANO<br />
+              <span style={{
+                background: 'var(--gradient-lime)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}>SEMANAL</span>
+            </h1>
+
+            <button
+              onClick={handleActivateRunning}
+              className="btn btn-secondary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}
+              title="Gerar/Recalcular Plano Híbrido com Corridas"
+            >
+              <RefreshCw size={13} />
+              <span>Gerar Corridas</span>
+            </button>
+          </div>
 
           {/* Week summary badges */}
           <div style={{ display: 'flex', gap: 10, marginTop: 16, flexWrap: 'wrap' }}>
@@ -92,7 +120,7 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
             </span>
             <span className="badge badge-cyan">
               <Activity size={11} />
-              {WEEK_DAYS.filter(d => weekPlan.days[d]?.type === 'corrida' || weekPlan.days[d]?.type === 'hibrido').length} corridas
+              {corridasCount} corridas
             </span>
             <span className="badge badge-purple">
               <Zap size={11} />
@@ -100,6 +128,39 @@ export default function WeeklyPlan({ state }: WeeklyPlanProps) {
             </span>
           </div>
         </div>
+
+        {/* Banner: Ativar Corridas se houver 0 corridas */}
+        {corridasCount === 0 && (
+          <div className="glass-card animate-fade-in mb-6" style={{
+            padding: 16,
+            background: 'linear-gradient(135deg, rgba(0,212,255,0.12) 0%, rgba(0,212,255,0.03) 100%)',
+            borderColor: 'rgba(0,212,255,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 20,
+          }}>
+            <div>
+              <div style={{ fontWeight: 800, color: 'var(--accent-cyan)', fontSize: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Activity size={16} />
+                <span>Nenhuma Corrida no Plano Atual</span>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 4 }}>
+                Ative as sessões de corrida intervalada em zonas de FC no seu plano híbrido.
+              </div>
+            </div>
+
+            <button
+              onClick={handleActivateRunning}
+              className="btn btn-primary btn-sm"
+              style={{ whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              <Sparkles size={14} />
+              Ativar Corridas
+            </button>
+          </div>
+        )}
 
         {/* Banner de Semana de Deload */}
         {weekPlan.weekNumber > 0 && weekPlan.weekNumber % 4 === 0 && (
