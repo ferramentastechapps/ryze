@@ -26,7 +26,7 @@ function ExerciseGifViewer({
   isPlaying,
   onError,
 }: {
-  exerciseDbId: string;
+  exerciseDbId: string | null | undefined;
   guideName: string;
   isPlaying: boolean;
   onError: () => void;
@@ -35,6 +35,13 @@ function ExerciseGifViewer({
   const [loadingState, setLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
 
   useEffect(() => {
+    // Se não há ID configurado, sinaliza erro imediatamente → cai no SVG
+    if (!exerciseDbId) {
+      setLoadingState('error');
+      onError();
+      return;
+    }
+
     let isMounted = true;
     setLoadingState('loading');
 
@@ -481,12 +488,20 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
             height={320}
             onError={() => setUse3D(false)}
           />
+        ) : gifFailed ? (
+          <AnimatedMotionEngine
+            guide={guide}
+            isPlaying={isPlaying}
+            speedMultiplier={speedMultiplier}
+            cameraPreset={cameraPreset}
+            resetSignal={resetSignal}
+          />
         ) : (
           <ExerciseGifViewer
-            exerciseDbId={guide.exerciseDbId || (guide.category === 'peito' ? 'EIeI8Vf' : guide.category === 'costas' ? 'eZyBC3j' : guide.category === 'ombros' ? 'DsgkuIt' : guide.category === 'biceps' ? '25GPyDY' : guide.category === 'triceps' ? 'yRLPCLu' : 'qXTaZnJ')}
+            exerciseDbId={guide.exerciseDbId}
             guideName={guide.name}
             isPlaying={isPlaying}
-            onError={() => {}}
+            onError={() => setGifFailed(true)}
           />
         )}
 

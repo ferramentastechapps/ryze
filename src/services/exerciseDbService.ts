@@ -77,3 +77,75 @@ export async function refreshExerciseGifUrl(exerciseDbId: string): Promise<strin
   }
   return getExerciseGifUrl(exerciseDbId);
 }
+
+// ─── REDE DE SEGURANÇA (somente em DEV) ──────────────────────────────────────
+// Detecta gifUrls e exerciseDbIds duplicados antes que cheguem ao usuário.
+// Disparado automaticamente na inicialização do módulo.
+
+/**
+ * Verifica se dois exercícios distintos resolveram para o mesmo gifUrl no cache
+ * local. Emite console.warn para cada colisão detectada.
+ * Deve ser chamado após o carregamento inicial ou ao término de um ciclo de resolução.
+ *
+ * @param exerciseMap Record<exerciseId, exerciseDbId | null>
+ */
+export function warnDuplicateGifUrls(exerciseMap: Record<string, string | null | undefined>): void {
+  if (!import.meta.env.DEV) return;
+
+  const gifUrlToIds: Record<string, string[]> = {};
+
+  for (const [exerciseId, exerciseDbId] of Object.entries(exerciseMap)) {
+    if (!exerciseDbId) continue;
+    const cacheKey = `${CACHE_PREFIX}${exerciseDbId}`;
+    let gifUrl: string | null = null;
+    try {
+      gifUrl = localStorage.getItem(cacheKey);
+    } catch {
+      continue;
+    }
+    if (!gifUrl) continue;
+
+    if (!gifUrlToIds[gifUrl]) gifUrlToIds[gifUrl] = [];
+    gifUrlToIds[gifUrl].push(exerciseId);
+  }
+
+  for (const [gifUrl, ids] of Object.entries(gifUrlToIds)) {
+    if (ids.length > 1) {
+      console.warn(
+        `[RYZE][DEV] ⚠️ gifUrl DUPLICADO detectado!\n` +
+        `  GIF: ${gifUrl}\n` +
+        `  Exercícios com esse mesmo GIF: ${ids.join(', ')}\n` +
+        `  Verifique os exerciseDbIds em exerciseGuides.ts`,
+      );
+    }
+  }
+}
+
+/**
+ * Verifica se dois exercícios no mapa estático têm o mesmo exerciseDbId.
+ * Emite console.warn para cada colisão detectada.
+ *
+ * @param exerciseMap Record<exerciseId, exerciseDbId | null>
+ */
+export function warnDuplicateExerciseDbIds(exerciseMap: Record<string, string | null | undefined>): void {
+  if (!import.meta.env.DEV) return;
+
+  const dbIdToExercises: Record<string, string[]> = {};
+
+  for (const [exerciseId, exerciseDbId] of Object.entries(exerciseMap)) {
+    if (!exerciseDbId) continue;
+    if (!dbIdToExercises[exerciseDbId]) dbIdToExercises[exerciseDbId] = [];
+    dbIdToExercises[exerciseDbId].push(exerciseId);
+  }
+
+  for (const [dbId, ids] of Object.entries(dbIdToExercises)) {
+    if (ids.length > 1) {
+      console.warn(
+        `[RYZE][DEV] ⚠️ exerciseDbId DUPLICADO detectado!\n` +
+        `  exerciseDbId: "${dbId}"\n` +
+        `  Exercícios afetados: ${ids.join(', ')}\n` +
+        `  Resultado: todos mostrariam o mesmo GIF. Corrija em exerciseGuides.ts`,
+      );
+    }
+  }
+}

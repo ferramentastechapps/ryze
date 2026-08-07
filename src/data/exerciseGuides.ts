@@ -2,6 +2,8 @@
 // RYZE — Base de Dados de Guias & Demonstrações de Exercícios
 // ============================================================
 
+import { warnDuplicateExerciseDbIds, warnDuplicateGifUrls } from '../services/exerciseDbService';
+
 export interface ExerciseGuide {
   id: string;
   name: string;
@@ -617,4 +619,14 @@ export function getExerciseGuide(exerciseId: string, exerciseName: string, muscl
     },
     proTips: [`Mantenha o foco constante na musculatura de ${primary}.`],
   };
+}
+
+// ─── REDE DE SEGURANÇA: checagem de IDs duplicados na inicialização (DEV only) ──
+// Extrai o mapa { exerciseId -> exerciseDbId } dos exercícios estáticos e verifica colisões.
+if (import.meta.env.DEV) {
+  const staticIdMap: Record<string, string | null | undefined> = Object.fromEntries(
+    Object.entries(EXERCISE_GUIDES).map(([k, v]) => [k, v.exerciseDbId])
+  );
+  warnDuplicateExerciseDbIds(staticIdMap); // detecta IDs duplicados nos dados estáticos
+  warnDuplicateGifUrls(staticIdMap);       // detecta gifUrls duplicados no cache local
 }
