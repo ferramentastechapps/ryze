@@ -6,6 +6,23 @@ interface XpBarProps {
   compact?: boolean;
 }
 
+const LEVEL_NAMES: Record<number, string> = {
+  1: 'Recruta',
+  2: 'Bronze',
+  3: 'Prata',
+  4: 'Ouro',
+  5: 'Platina',
+  6: 'Diamante',
+  7: 'Mestre',
+  8: 'Grão-Mestre',
+  9: 'Challenger',
+  10: 'RYZE Elite',
+};
+
+function getLevelName(level: number): string {
+  return LEVEL_NAMES[level] ?? `Nível ${level}`;
+}
+
 export const XpBar: React.FC<XpBarProps> = ({ compact = false }) => {
   const { xp, level, streak, unlockedBadges } = useGamificationStore();
 
@@ -14,22 +31,30 @@ export const XpBar: React.FC<XpBarProps> = ({ compact = false }) => {
   const currentLevelProgress = xp - prevLevelXp;
   const xpNeededForNext = nextLevelXp - prevLevelXp;
   const progressPercent = Math.min(100, Math.max(0, (currentLevelProgress / xpNeededForNext) * 100));
+  const xpToNext = xpNeededForNext - currentLevelProgress;
 
   if (compact) {
     return (
-      <div className="flex items-center gap-3 bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-xl px-3 py-1.5 text-xs text-zinc-300">
-        <div className="flex items-center gap-1 font-bold text-amber-400">
-          <Zap className="w-3.5 h-3.5 fill-amber-400" />
-          <span>Nível {level}</span>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        background: 'var(--bg-elevated)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '6px 12px',
+        fontSize: 12,
+        color: 'var(--text-muted)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 800, color: 'var(--accent-orange)' }}>
+          <Zap size={13} />
+          <span>Nv. {level}</span>
         </div>
-        <div className="w-16 bg-zinc-800 h-2 rounded-full overflow-hidden">
-          <div
-            className="bg-gradient-to-r from-amber-500 to-orange-500 h-full rounded-full transition-all duration-500"
-            style={{ width: `${progressPercent}%` }}
-          />
+        <div style={{ width: 48, height: 5, background: 'var(--border-subtle)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--accent-orange)', borderRadius: 99, transition: 'width 0.5s ease' }} />
         </div>
-        <div className="flex items-center gap-1 font-semibold text-orange-400">
-          <Flame className="w-3.5 h-3.5 fill-orange-400" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: 700, color: 'var(--accent-orange)' }}>
+          <Flame size={13} />
           <span>{streak}d</span>
         </div>
       </div>
@@ -37,53 +62,142 @@ export const XpBar: React.FC<XpBarProps> = ({ compact = false }) => {
   }
 
   return (
-    <div className="bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800/80 rounded-2xl p-4 shadow-xl">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 font-extrabold text-lg">
+    <div className="glass-card" style={{ padding: '16px 18px' }}>
+      {/* Top row: Level badge + right stats */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        
+        {/* Level badge + name */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{
+            width: 44,
+            height: 44,
+            borderRadius: 14,
+            background: 'linear-gradient(135deg, rgba(255,95,31,0.25) 0%, rgba(255,95,31,0.1) 100%)',
+            border: '1px solid rgba(255,95,31,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'var(--font-display)',
+            fontSize: 22,
+            fontWeight: 900,
+            color: 'var(--accent-orange)',
+            flexShrink: 0,
+          }}>
             {level}
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-white text-sm">Atleta Nível {level}</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                {xp} Total XP
-              </span>
+            <div style={{
+              fontFamily: 'var(--font-ui)',
+              fontWeight: 800,
+              fontSize: 15,
+              color: 'var(--text-primary)',
+              lineHeight: 1.2,
+            }}>
+              {getLevelName(level)}
             </div>
-            <p className="text-xs text-zinc-400">
-              {xpNeededForNext - currentLevelProgress} XP para o Nível {level + 1}
-            </p>
+            <div style={{
+              fontSize: 11,
+              color: 'var(--text-muted)',
+              marginTop: 2,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}>
+              <span style={{ color: 'var(--accent-orange)', fontWeight: 700 }}>{xp} XP</span>
+              <span>•</span>
+              <span>faltam {xpToNext} XP para Nv. {level + 1}</span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-right">
-            <div className="flex items-center justify-end gap-1 text-orange-400 font-black text-base">
-              <Flame className="w-4 h-4 fill-orange-400 animate-pulse" />
-              <span>{streak} {streak === 1 ? 'dia' : 'dias'}</span>
+        {/* Right: Streak + Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Streak */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              fontFamily: 'var(--font-display)',
+              fontSize: 18,
+              fontWeight: 900,
+              color: streak > 0 ? 'var(--accent-orange)' : 'var(--text-muted)',
+            }}>
+              <Flame size={16} style={{ flexShrink: 0 }} />
+              <span>{streak}</span>
             </div>
-            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Sequência</span>
+            <div style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              marginTop: 1,
+            }}>
+              Sequência
+            </div>
           </div>
 
-          <div className="text-right pl-3 border-l border-zinc-800">
-            <div className="flex items-center justify-end gap-1 text-emerald-400 font-black text-base">
-              <Trophy className="w-4 h-4" />
+          {/* Divider */}
+          <div style={{ width: 1, height: 32, background: 'var(--border-subtle)' }} />
+
+          {/* Badges */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 4,
+              fontFamily: 'var(--font-display)',
+              fontSize: 18,
+              fontWeight: 900,
+              color: 'var(--accent-lime)',
+            }}>
+              <Trophy size={15} style={{ flexShrink: 0 }} />
               <span>{unlockedBadges.length}</span>
             </div>
-            <span className="text-[10px] text-zinc-500 font-medium uppercase tracking-wider">Conquistas</span>
+            <div style={{
+              fontSize: 9,
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              color: 'var(--text-muted)',
+              marginTop: 1,
+            }}>
+              Conquistas
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div className="space-y-1">
-        <div className="w-full bg-zinc-800/80 h-2.5 rounded-full overflow-hidden p-0.5 border border-zinc-700/50">
-          <div
-            className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 h-full rounded-full transition-all duration-700 shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-            style={{ width: `${progressPercent}%` }}
-          />
+      {/* XP Progress Bar */}
+      <div>
+        <div style={{
+          height: 8,
+          background: 'var(--bg-elevated)',
+          borderRadius: 99,
+          overflow: 'hidden',
+          border: '1px solid var(--border-subtle)',
+        }}>
+          <div style={{
+            height: '100%',
+            width: `${progressPercent}%`,
+            background: 'linear-gradient(90deg, var(--accent-orange) 0%, #ffaa44 100%)',
+            borderRadius: 99,
+            transition: 'width 0.7s cubic-bezier(0.4, 0, 0.2, 1)',
+            boxShadow: progressPercent > 0 ? '0 0 10px rgba(255,95,31,0.5)' : 'none',
+          }} />
         </div>
-        <div className="flex justify-between text-[10px] text-zinc-500 font-medium">
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          marginTop: 5,
+          fontSize: 10,
+          color: 'var(--text-muted)',
+          fontFamily: 'var(--font-ui)',
+          fontWeight: 600,
+        }}>
           <span>{currentLevelProgress} XP</span>
           <span>{xpNeededForNext} XP</span>
         </div>
