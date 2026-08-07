@@ -48,6 +48,20 @@ function getWorkoutBg(workout: DayWorkout) {
   return 'var(--bg-elevated)';
 }
 
+function splitWorkoutTitle(title: string) {
+  const match = title.match(/^(Treino\s+[A-E])(?:\s*—\s*|\s+)?(.*)$/i);
+  if (match) {
+    return {
+      main: match[1],
+      sub: match[2]?.trim() || '',
+    };
+  }
+  return {
+    main: title,
+    sub: '',
+  };
+}
+
 export default function Dashboard({ state, onUpdate }: DashboardProps) {
   const navigate = useNavigate();
   const [demoExercise, setDemoExercise] = useState<{ id: string; name: string; muscleGroups: string[] } | null>(null);
@@ -221,13 +235,23 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                   </div>
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 16, color: 'var(--text-primary)' }}>
-                        {todayResult.workout.title}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2, fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
-                      <span style={{ color: getWorkoutColor(todayResult.workout), textTransform: 'uppercase', fontWeight: 700 }}>
+                    {(() => {
+                      const parts = splitWorkoutTitle(todayResult.workout.title);
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
+                            {parts.main}
+                          </span>
+                          {parts.sub && (
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.2 }}>
+                              {parts.sub}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })()}
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 4, fontFamily: 'var(--font-ui)', fontWeight: 600 }}>
+                      <span style={{ color: getWorkoutColor(todayResult.workout), textTransform: 'uppercase', fontWeight: 800 }}>
                         {todayResult.workout.type === 'musculacao' ? 'Musculação' : todayResult.workout.type === 'corrida' ? 'Corrida' : 'Treino Híbrido'}
                       </span>
                       {todayResult.workout.type === 'musculacao' && (
