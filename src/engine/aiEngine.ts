@@ -373,22 +373,99 @@ function buildTreinoC(profile: UserProfile): StrengthWorkout {
 }
 
 function buildTreinoD(profile: UserProfile): StrengthWorkout {
-  const base = buildTreinoB(profile);
+  const isBeginner = profile.experienceLevel === 'iniciante';
+  const setsBase = isBeginner ? 3 : 4;
+
+  const exercises: Exercise[] = [
+    {
+      id: 'mob_quadril',
+      name: 'Mobilidade de Quadril e Isquiotibiais',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: 1,
+      reps: '5 min',
+      rest: 30,
+      blockName: 'BLOCO 01 - AQUECIMENTO',
+      blockType: 'aquecimento',
+      technique: 'Ativação dinâmica de glúteos e posterior de coxa pré-treino.',
+    },
+    {
+      id: 'stiff_barra',
+      name: 'Stiff com Barra Reta / Halteres',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: setsBase,
+      reps: '12-15',
+      rest: 60,
+      blockName: 'BLOCO 02 - META DE REPETIÇÃO',
+      blockType: 'meta',
+      technique: 'Mantenha a coluna neutra e sinta o alongamento profundo nos isquiotibiais.',
+    },
+    {
+      id: 'cadeira_flexora',
+      name: 'Cadeira Flexora / Mesa Flexora',
+      muscleGroups: ['pernas'],
+      sets: setsBase,
+      reps: '12 + Drop',
+      rest: 45,
+      blockName: 'BLOCO 03 - DROPSET',
+      blockType: 'dropset',
+      technique: 'Na última série reduza 30% do peso e vá até a falha concentrada.',
+    },
+    {
+      id: 'elevacao_pelvica',
+      name: 'Elevação Pélvica com Barra (Hip Thrust)',
+      muscleGroups: ['gluteos', 'pernas'],
+      sets: setsBase,
+      reps: '15',
+      rest: 60,
+      blockName: 'BLOCO 04 - META DE REPETIÇÃO',
+      blockType: 'meta',
+      technique: 'Contração máxima de 2 segundos de glúteo no topo do movimento.',
+    },
+    {
+      id: 'bi_passada',
+      name: 'Passada / Afundo com Halteres',
+      muscleGroups: ['pernas', 'gluteos'],
+      sets: setsBase,
+      reps: '12 por perna',
+      rest: 45,
+      blockName: 'BLOCO 05 - BI-SET',
+      blockType: 'biset',
+      pairedExerciseName: 'Panturrilha Sentado (15 reps sem descanso)',
+      technique: 'Passos firmes e profundos. Emende sem descanso na Panturrilha.',
+    },
+    {
+      id: 'bi_panturrilha_sentado',
+      name: 'Panturrilha Sentado no Gêmeos',
+      muscleGroups: ['pernas'],
+      sets: setsBase,
+      reps: '15',
+      rest: 45,
+      blockName: 'BLOCO 05 - BI-SET',
+      blockType: 'biset',
+      technique: 'Foco na extensão e amplitude do sóleo.',
+    },
+  ];
+
   return {
-    ...base,
+    type: 'musculacao',
     letter: 'D',
-    title: 'Treino D — Peito, Ombro e Bíceps (Foco Densidade)',
-    description: 'Segundo estímulo semanal de peitoral e deltóides com variações de ângulos e fadiga controlada.',
+    title: 'Treino D — Membros Inferiores II (Posterior & Glúteos)',
+    description: 'Foco em cadeia posterior de coxa, hipertrofia de glúteos e definição de panturrilhas.',
+    focus: ['pernas', 'gluteos'],
+    exercises,
+    duration: profile.sessionDuration || 60,
+    intensity: 'alta',
+    volume: exercises.reduce((acc, ex) => acc + ex.sets * 12, 0),
   };
 }
 
 function buildTreinoE(profile: UserProfile): StrengthWorkout {
-  const base = buildTreinoC(profile);
+  const baseC = buildTreinoC(profile);
   return {
-    ...base,
+    ...baseC,
     letter: 'E',
-    title: 'Treino E — Costas e Tríceps (Foco Espessura)',
-    description: 'Segundo estímulo de dorsal e braços para fechamento de volume semanal.',
+    title: 'Treino E — Upper Body Híbrido (Costas & Ombros Foco Espessura)',
+    description: 'Trabalho de densidade da musculatura dorsal, deltoides posteriores e estabilidade articular.',
   };
 }
 
