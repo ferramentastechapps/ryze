@@ -437,15 +437,104 @@ export const EXERCISE_GUIDES: Record<string, ExerciseGuide> = {
   },
 };
 
+// Helper to match precise ExerciseDB IDs based on exercise names and category
+function findExactExerciseDbId(name: string, category: string): string {
+  const norm = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  
+  // Mobilidade e Aquecimento de Superiores ou Inferiores
+  if (norm.includes('aquecimento') || norm.includes('mobilidade') || norm.includes('flexibilidade') || norm.includes('alongamento')) {
+    if (norm.includes('inferior') || norm.includes('perna') || norm.includes('quadril') || norm.includes('tornozelo')) {
+      return '0654'; // leg/hip stretch / quad stretch
+    }
+    return '0390'; // Arm swings / shoulder mobility
+  }
+  
+  // Supino com Halteres vs Barra
+  if (norm.includes('supino')) {
+    const isInclinado = norm.includes('inclinado');
+    const isDeclinado = norm.includes('declinado');
+    const isHalter = norm.includes('halter') || norm.includes('halteres');
+    
+    if (isHalter) {
+      if (isInclinado) return '0314'; // dumbbell incline bench press
+      if (isDeclinado) return '0304'; // dumbbell decline bench press
+      return '0289'; // dumbbell bench press
+    } else {
+      if (isInclinado) return '0047'; // barbell incline bench press
+      if (isDeclinado) return '0033'; // barbell decline bench press
+      return 'EIeI8Vf'; // barbell bench press
+    }
+  }
+
+  // Agachamento
+  if (norm.includes('agachamento')) {
+    if (norm.includes('halter') || norm.includes('halteres')) return '0346'; // dumbbell goblet squat
+    if (norm.includes('bodyweight') || norm.includes('corpo')) return '0029'; // bodyweight squat
+    return 'qXTaZnJ'; // barbell squat
+  }
+
+  // Remadas
+  if (norm.includes('remada')) {
+    if (norm.includes('baixa') || norm.includes('cabo')) return '0208'; // cable seated row
+    if (norm.includes('curvada')) return 'eZyBC3j'; // barbell bent over row
+    if (norm.includes('serrote') || norm.includes('unilateral') || norm.includes('halter')) return '0292'; // dumbbell row
+    return 'eZyBC3j';
+  }
+
+  // Puxadas
+  if (norm.includes('puxada')) {
+    if (norm.includes('frente') || norm.includes('pulley') || norm.includes('aberta')) return '0150'; // lat pulldown
+    return '0150';
+  }
+
+  // Pernas / Máquinas
+  if (norm.includes('flexora')) return '96j3p6Q'; // lever seated leg curl
+  if (norm.includes('extensora')) return 'm0kndbU'; // lever leg extension
+  if (norm.includes('stiff')) return '5tX0c0a'; // barbell stiff leg deadlift
+  if (norm.includes('passada') || norm.includes('afundo')) return '0346'; // dumbbell lunge
+  if (norm.includes('leg press')) return '10Z2DXU'; // sled leg press
+  if (norm.includes('elevacao pelvica') || norm.includes('thrust')) return '0064'; // barbell hip thrust
+  if (norm.includes('panturrilha')) return '0111'; // standing calf raise
+
+  // Braços
+  if (norm.includes('triceps') || norm.includes('testa')) {
+    if (norm.includes('corda') || norm.includes('pulley') || norm.includes('barra')) return '0200'; // pushdown
+    return 'yRLPCLu'; // skullcrusher
+  }
+  if (norm.includes('biceps') || norm.includes('rosca')) {
+    if (norm.includes('concentrada')) return '0298'; // concentration curl
+    if (norm.includes('martelo')) return '0313'; // hammer curl
+    return '25GPyDY'; // bicep curl
+  }
+  
+  // Ombros
+  if (norm.includes('lateral')) return 'DsgkuIt'; // lateral raise
+  if (norm.includes('desenvolvimento')) return '5vfAI0I'; // shoulder press
+  
+  const defaultCategoryDbIds: Record<string, string> = {
+    peito: 'EIeI8Vf',       // Supino Reto / Peitoral
+    costas: 'eZyBC3j',      // Remada / Dorsal
+    pernas: 'qXTaZnJ',      // Agachamento / Pernas
+    ombros: 'DsgkuIt',      // Elevação / Desenvolvimento
+    biceps: '25GPyDY',      // Rosca Direta / Bíceps
+    triceps: 'yRLPCLu',     // Tríceps
+    gluteos: 'qXTaZnJ',     // Quadril / Glúteo
+    core: 'qXTaZnJ',        // Core / Abdominal
+  };
+
+  return defaultCategoryDbIds[category] || 'qXTaZnJ';
+}
+
 export function getExerciseGuide(exerciseId: string, exerciseName: string, muscleGroups: string[]): ExerciseGuide {
   if (EXERCISE_GUIDES[exerciseId]) {
     return EXERCISE_GUIDES[exerciseId];
   }
 
+  // Exact or strict name matching first (to avoid false-positive overlaps)
   const normalizedName = exerciseName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   for (const [key, guide] of Object.entries(EXERCISE_GUIDES)) {
     const normalizedGuide = guide.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    if (normalizedGuide.includes(normalizedName.split(' ')[0]) || normalizedName.includes(normalizedGuide.split(' ')[0])) {
+    if (normalizedName === normalizedGuide || normalizedName.includes(normalizedGuide) || normalizedGuide.includes(normalizedName)) {
       return guide;
     }
   }
@@ -500,18 +589,7 @@ export function getExerciseGuide(exerciseId: string, exerciseName: string, muscl
     defaultStabilizers = ['Braquiorradial', 'Deltoide Anterior', 'Puno'];
   }
 
-  const defaultCategoryDbIds: Record<string, string> = {
-    peito: 'EIeI8Vf',       // Supino Reto / Peitoral
-    costas: 'eZyBC3j',      // Remada / Dorsal
-    pernas: 'qXTaZnJ',      // Agachamento / Pernas
-    ombros: 'DsgkuIt',      // Elevação / Desenvolvimento
-    biceps: '25GPyDY',      // Rosca Direta / Bíceps
-    triceps: 'yRLPCLu',     // Tríceps
-    gluteos: 'qXTaZnJ',     // Quadril / Glúteo
-    core: 'qXTaZnJ',        // Core / Abdominal
-  };
-
-  const exerciseDbId = defaultCategoryDbIds[category] || 'qXTaZnJ';
+  const exerciseDbId = findExactExerciseDbId(exerciseName, category);
 
   return {
     id: exerciseId,
