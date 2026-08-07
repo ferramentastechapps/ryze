@@ -500,12 +500,26 @@ export function getExerciseGuide(exerciseId: string, exerciseName: string, muscl
     defaultStabilizers = ['Braquiorradial', 'Deltoide Anterior', 'Puno'];
   }
 
+  const defaultCategoryDbIds: Record<string, string> = {
+    peito: 'EIeI8Vf',       // Supino Reto / Peitoral
+    costas: 'eZyBC3j',      // Remada / Dorsal
+    pernas: 'qXTaZnJ',      // Agachamento / Pernas
+    ombros: 'DsgkuIt',      // Elevação / Desenvolvimento
+    biceps: '25GPyDY',      // Rosca Direta / Bíceps
+    triceps: 'yRLPCLu',     // Tríceps
+    gluteos: 'qXTaZnJ',     // Quadril / Glúteo
+    core: 'qXTaZnJ',        // Core / Abdominal
+  };
+
+  const exerciseDbId = defaultCategoryDbIds[category] || 'qXTaZnJ';
+
   return {
     id: exerciseId,
     name: exerciseName,
     category,
     motionType,
     has3d: false,
+    exerciseDbId,
     primaryMuscles: muscleGroups.map(m => m.toUpperCase()),
     secondaryMuscles: ['Sinergistas Auxiliares', 'Cadeia Posterior'],
     stabilizers: defaultStabilizers,

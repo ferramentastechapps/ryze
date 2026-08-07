@@ -481,20 +481,12 @@ export default function ExerciseDemonstrator({ guide }: ExerciseDemonstratorProp
             height={320}
             onError={() => setUse3D(false)}
           />
-        ) : guide.exerciseDbId && !gifFailed ? (
+        ) : (
           <ExerciseGifViewer
-            exerciseDbId={guide.exerciseDbId}
+            exerciseDbId={guide.exerciseDbId || (guide.category === 'peito' ? 'EIeI8Vf' : guide.category === 'costas' ? 'eZyBC3j' : guide.category === 'ombros' ? 'DsgkuIt' : guide.category === 'biceps' ? '25GPyDY' : guide.category === 'triceps' ? 'yRLPCLu' : 'qXTaZnJ')}
             guideName={guide.name}
             isPlaying={isPlaying}
-            onError={() => setGifFailed(true)}
-          />
-        ) : (
-          <AnimatedMotionEngine
-            guide={guide}
-            isPlaying={isPlaying}
-            speedMultiplier={speedMultiplier}
-            cameraPreset={cameraPreset}
-            resetSignal={resetSignal}
+            onError={() => {}}
           />
         )}
 
