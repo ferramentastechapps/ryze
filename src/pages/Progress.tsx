@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info, Trophy, Lightbulb, Download, Moon } from 'lucide-react';
+import { BarChart2, TrendingUp, Activity, Dumbbell, Flame, Calendar, Settings, LogOut, Search, BookOpen, Info, Trophy, Lightbulb, Download, Moon, Medal } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  BarChart, Bar, CartesianGrid, RadialBarChart, RadialBar, Legend,
+  BarChart, Bar, CartesianGrid,
+  LineChart, Line,
 } from 'recharts';
-import type { AppState, WorkoutLog } from '../types';
+import type { AppState, WorkoutLog, StrengthWorkout } from '../types';
 import { getProgressStats, resetApp } from '../store/appStore';
 import { EXERCISE_GUIDES, type ExerciseGuide } from '../data/exerciseGuides';
 import ExerciseDemoModal from '../components/ExerciseDemoModal';
@@ -56,7 +57,7 @@ function exportCSV(logs: import('../types').WorkoutLog[]) {
 export default function Progress({ state }: ProgressProps) {
   const navigate = useNavigate();
   const { logs, profile } = state;
-  const [activeTab, setActiveTab] = useState<'overview' | 'strength' | 'running' | 'history' | 'library'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'strength' | 'running' | 'history' | 'library' | 'prs'>('overview');
   const [showReset, setShowReset] = useState(false);
   const [selectedDemo, setSelectedDemo] = useState<{ id: string; name: string; muscles: string[] } | null>(null);
 
@@ -65,6 +66,9 @@ export default function Progress({ state }: ProgressProps) {
 
   // Build weekly volume data for the last 8 weeks
   const weeklyData = buildWeeklyData(completed);
+
+  // Build Personal Records from loggedSets
+  const prBoard = buildPRBoard(completed);
 
   // Build last 10 workouts history
   const recentWorkouts = completed
@@ -231,28 +235,29 @@ export default function Progress({ state }: ProgressProps) {
         }}>
           {([
             { key: 'overview', label: 'Geral', icon: <BarChart2 size={14} /> },
-            { key: 'library', label: 'Guias & Demos', icon: <BookOpen size={14} /> },
+            { key: 'prs', label: 'PRs', icon: <Medal size={14} /> },
             { key: 'strength', label: 'Força', icon: <Dumbbell size={14} /> },
             { key: 'running', label: 'Corrida', icon: <Activity size={14} /> },
+            { key: 'library', label: 'Guias', icon: <BookOpen size={14} /> },
             { key: 'history', label: 'Histórico', icon: <Calendar size={14} /> },
           ] as const).map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
+              onClick={() => setActiveTab(tab.key as any)}
               style={{
                 flex: 1,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 4,
-                padding: '10px 4px',
+                padding: '10px 2px',
                 borderRadius: 'var(--radius-md)',
                 background: activeTab === tab.key ? 'var(--bg-card)' : 'transparent',
                 border: `1px solid ${activeTab === tab.key ? 'var(--border-medium)' : 'transparent'}`,
                 color: activeTab === tab.key ? 'var(--accent-lime)' : 'var(--text-muted)',
                 fontFamily: 'var(--font-ui)',
                 fontWeight: 600,
-                fontSize: 11,
+                fontSize: 10,
                 cursor: 'pointer',
                 transition: 'all 0.2s',
               }}
@@ -266,6 +271,9 @@ export default function Progress({ state }: ProgressProps) {
         {/* Tab Content */}
         {activeTab === 'overview' && (
           <OverviewTab weeklyData={weeklyData} stats={stats} logs={completed} />
+        )}
+        {activeTab === 'prs' && (
+          <PRBoardTab prBoard={prBoard} />
         )}
         {activeTab === 'library' && (
           <LibraryTab onSelectExercise={(id, name, muscles) => setSelectedDemo({ id, name, muscles })} />
@@ -294,10 +302,10 @@ export default function Progress({ state }: ProgressProps) {
   );
 }
 
-// ─── Helper ────────────────────────────────────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────────────────────────
 
 function buildWeeklyData(logs: WorkoutLog[]) {
-  const weeks: Record<string, { week: string; strength: number; run: number; total: number }> = {};
+  const weeks: Record<string, { week: string; strength: number; run: number; total: number; tonnage: number }> = {};
 
   logs.forEach(log => {
     const date = new Date(log.date);
@@ -307,10 +315,19 @@ function buildWeeklyData(logs: WorkoutLog[]) {
     const key = weekStart.toISOString().split('T')[0];
     const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
 
-    if (!weeks[key]) weeks[key] = { week: label, strength: 0, run: 0, total: 0 };
+    if (!weeks[key]) weeks[key] = { week: label, strength: 0, run: 0, total: 0, tonnage: 0 };
 
     if (log.workout.type === 'musculacao') {
       weeks[key].strength += 1;
+      // Calculate tonnage from loggedSets
+      const sw = log.workout as StrengthWorkout;
+      sw.exercises?.forEach(ex => {
+        ex.loggedSets?.forEach(s => {
+          if (s.completed) {
+            weeks[key].tonnage += (s.weight || 0) * (s.reps || 0);
+          }
+        });
+      });
     } else if (log.workout.type === 'corrida') {
       weeks[key].run += (log.workout as any).distance || 0;
     }
@@ -318,6 +335,65 @@ function buildWeeklyData(logs: WorkoutLog[]) {
   });
 
   return Object.values(weeks).slice(-8);
+}
+
+interface PREntry {
+  exerciseName: string;
+  maxWeight: number;
+  reps: number;
+  oneRM: number;
+  date: string;
+}
+
+function buildPRBoard(logs: WorkoutLog[]): PREntry[] {
+  const prMap: Record<string, PREntry> = {};
+
+  logs.forEach(log => {
+    if (log.workout.type !== 'musculacao') return;
+    const sw = log.workout as StrengthWorkout;
+    sw.exercises?.forEach(ex => {
+      ex.loggedSets?.forEach(s => {
+        if (!s.completed || !s.weight || !s.reps) return;
+        const oneRM = s.oneRM ?? (s.weight * (1 + s.reps / 30));
+        const existing = prMap[ex.name];
+        if (!existing || oneRM > existing.oneRM) {
+          prMap[ex.name] = {
+            exerciseName: ex.name,
+            maxWeight: s.weight,
+            reps: s.reps,
+            oneRM: Math.round(oneRM * 10) / 10,
+            date: log.date,
+          };
+        }
+      });
+    });
+  });
+
+  return Object.values(prMap).sort((a, b) => b.oneRM - a.oneRM);
+}
+
+function buildPaceData(logs: WorkoutLog[]) {
+  return logs
+    .filter(l => l.workout.type === 'corrida')
+    .map(l => {
+      const rw = l.workout as any;
+      const paceStr: string = rw.paceTarget || '';
+      let paceSeconds = 0;
+      if (paceStr) {
+        const parts = paceStr.replace('/km', '').split(':');
+        if (parts.length === 2) {
+          paceSeconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+      }
+      const date = new Date(l.date);
+      return {
+        date: `${date.getDate()}/${date.getMonth() + 1}`,
+        pace: paceSeconds > 0 ? parseFloat((paceSeconds / 60).toFixed(2)) : null,
+        km: rw.distance || 0,
+      };
+    })
+    .filter(d => d.pace !== null)
+    .slice(-10);
 }
 
 // ─── Tabs ──────────────────────────────────────────────────────────────────
@@ -412,7 +488,81 @@ function OverviewTab({ weeklyData, stats, logs }: { weeklyData: any[]; stats: an
   );
 }
 
+function PRBoardTab({ prBoard }: { prBoard: Array<{ exerciseName: string; maxWeight: number; reps: number; oneRM: number; date: string }> }) {
+  if (prBoard.length === 0) {
+    return <EmptyState message="Nenhum PR registrado ainda. Complete treinos de musculação com séries logadas para ver seus recordes pessoais aqui!" />;
+  }
+
+  const medals = ['🥇', '🥈', '🥉'];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 4 }}>
+        RECORDES PESSOAIS — 1RM ESTIMADO (FÓRMULA EPLEY)
+      </div>
+      {prBoard.map((pr, i) => {
+        const date = new Date(pr.date).toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+        return (
+          <div key={pr.exerciseName} className="glass-card" style={{
+            padding: '14px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            borderColor: i === 0 ? 'rgba(200,255,0,0.3)' : 'var(--border-subtle)',
+            background: i === 0 ? 'linear-gradient(135deg, rgba(200,255,0,0.06) 0%, transparent 100%)' : undefined,
+          }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: 12,
+              background: i === 0 ? 'var(--accent-lime-dim)' : 'var(--bg-elevated)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, flexShrink: 0,
+            }}>
+              {medals[i] || `#${i + 1}`}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 14, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {pr.exerciseName}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>
+                {pr.maxWeight}kg × {pr.reps} reps • {date}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 800, color: i === 0 ? 'var(--accent-lime)' : 'var(--text-primary)' }}>
+                {pr.oneRM}kg
+              </div>
+              <div style={{ fontSize: 9, color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.06em' }}>1RM EST.</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function StrengthTab({ logs }: { logs: WorkoutLog[] }) {
+  // Build weekly tonnage data
+  const tonnageData: { week: string; tonnage: number }[] = [];
+  const weeks: Record<string, { week: string; tonnage: number }> = {};
+
+  logs.forEach(log => {
+    const date = new Date(log.date);
+    const weekStart = new Date(date);
+    weekStart.setDate(date.getDate() - date.getDay() + 1);
+    weekStart.setHours(0, 0, 0, 0);
+    const key = weekStart.toISOString().split('T')[0];
+    const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
+    if (!weeks[key]) weeks[key] = { week: label, tonnage: 0 };
+    const sw = log.workout as StrengthWorkout;
+    sw.exercises?.forEach(ex => {
+      ex.loggedSets?.forEach(s => {
+        if (s.completed) weeks[key].tonnage += (s.weight || 0) * (s.reps || 0);
+      });
+    });
+  });
+  const weeklyTonnage = Object.values(weeks).slice(-8);
+  const hasTonnageData = weeklyTonnage.some(w => w.tonnage > 0);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {logs.length === 0 ? (
@@ -435,6 +585,34 @@ function StrengthTab({ logs }: { logs: WorkoutLog[] }) {
             </div>
           </div>
 
+          {/* Weekly Tonnage Chart */}
+          <div className="glass-card" style={{ padding: 20 }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Tonelagem semanal</div>
+            <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Total de kg × reps levantados por semana</div>
+            {hasTonnageData ? (
+              <ResponsiveContainer width="100%" height={160}>
+                <AreaChart data={weeklyTonnage} style={CHART_STYLE}>
+                  <defs>
+                    <linearGradient id="tonnageGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#FF5F1F" stopOpacity={0.4} />
+                      <stop offset="95%" stopColor="#FF5F1F" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="week" tick={{ fill: '#8A8A9A', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#8A8A9A', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <Tooltip
+                    contentStyle={{ background: '#1A1A2E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
+                    formatter={(v: any) => [`${v.toLocaleString('pt-BR')} kg`, 'Tonelagem']}
+                  />
+                  <Area type="monotone" dataKey="tonnage" stroke="#FF5F1F" strokeWidth={2} fill="url(#tonnageGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyState message="Registre séries com peso nos seus treinos para ver a tonelagem." />
+            )}
+          </div>
+
           <div className="glass-card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
               <Lightbulb size={18} style={{ color: 'var(--accent-orange)' }} />
@@ -451,6 +629,8 @@ function StrengthTab({ logs }: { logs: WorkoutLog[] }) {
 }
 
 function RunningTab({ logs, totalKm }: { logs: WorkoutLog[]; totalKm: number }) {
+  const paceData = buildPaceData(logs);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
       {logs.length === 0 ? (
@@ -479,6 +659,32 @@ function RunningTab({ logs, totalKm }: { logs: WorkoutLog[]; totalKm: number }) 
               ))}
             </div>
           </div>
+
+          {/* Pace Evolution Chart */}
+          {paceData.length > 1 && (
+            <div className="glass-card" style={{ padding: 20 }}>
+              <div style={{ fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Evolução do Pace</div>
+              <div style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 16 }}>Pace (min/km) por sessão — menor é mais rápido</div>
+              <ResponsiveContainer width="100%" height={160}>
+                <LineChart data={paceData} style={CHART_STYLE}>
+                  <defs>
+                    <linearGradient id="paceGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00D4FF" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#00D4FF" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <XAxis dataKey="date" tick={{ fill: '#8A8A9A', fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#8A8A9A', fontSize: 10 }} axisLine={false} tickLine={false} domain={['auto', 'auto']} reversed />
+                  <Tooltip
+                    contentStyle={{ background: '#1A1A2E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12 }}
+                    formatter={(v: any) => [`${v.toFixed(2)} min/km`, 'Pace']}
+                  />
+                  <Line type="monotone" dataKey="pace" stroke="#00D4FF" strokeWidth={2} dot={{ fill: '#00D4FF', r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
 
           <div className="glass-card" style={{ padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'var(--font-ui)', fontWeight: 700, fontSize: 15, marginBottom: 16 }}>
