@@ -176,12 +176,11 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           {todayResult && (
             <div
               className="animate-fade-in"
-              style={{ marginBottom: 24, animationDelay: '80ms' }}
+              style={{ marginTop: 24, marginBottom: 24, animationDelay: '80ms' }}
             >
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
                 marginBottom: 10,
               }}>
                 <div style={{
@@ -198,7 +197,6 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                   <Sparkles size={13} color="var(--accent-lime)" />
                   <span>TREINO DE HOJE</span>
                 </div>
-                <span className="badge badge-lime" style={{ fontSize: 9, padding: '2px 8px' }}>HOJE</span>
               </div>
 
               <div
@@ -239,11 +237,11 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                       const parts = splitWorkoutTitle(todayResult.workout.title);
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 900, fontSize: 18, color: 'var(--text-primary)', letterSpacing: '0.02em' }}>
+                          <span style={{ fontFamily: 'var(--font-ui)', fontWeight: 800, fontSize: 17, color: 'var(--text-primary)', textTransform: 'none' }}>
                             {parts.main}
                           </span>
                           {parts.sub && (
-                            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.2 }}>
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: 13, color: 'var(--text-muted)', fontWeight: 500, lineHeight: 1.2, textTransform: 'none' }}>
                               {parts.sub}
                             </span>
                           )}
