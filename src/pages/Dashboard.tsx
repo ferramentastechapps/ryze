@@ -162,22 +162,55 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
           {todayResult && (
             <div
               className="animate-fade-in"
-              style={{ marginBottom: 24, animationDelay: '80ms' }}
+              style={{ marginBottom: 28, animationDelay: '80ms' }}
             >
-              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'var(--font-ui)', marginBottom: 12 }}>
-                TREINO DE HOJE
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}>
+                <div style={{
+                  fontSize: 11,
+                  fontWeight: 800,
+                  color: 'var(--text-muted)',
+                  letterSpacing: '0.08em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'var(--font-ui)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}>
+                  <Sparkles size={13} color="var(--accent-lime)" />
+                  <span>TREINO DE HOJE</span>
+                </div>
+                <span className="badge badge-lime" style={{ fontSize: 9, padding: '2px 8px' }}>HOJE</span>
               </div>
+
               <div
-                className="workout-card"
+                className="glass-card"
                 style={{
+                  padding: 20,
+                  border: `1px solid ${
+                    todayCompleted
+                      ? 'rgba(200,255,0,0.3)'
+                      : todayResult.workout.type === 'musculacao'
+                      ? 'rgba(255,95,31,0.3)'
+                      : todayResult.workout.type === 'corrida'
+                      ? 'rgba(0,212,255,0.3)'
+                      : 'var(--border-medium)'
+                  }`,
                   background: todayCompleted
-                    ? 'rgba(200,255,0,0.04)'
+                    ? 'linear-gradient(135deg, rgba(200,255,0,0.06) 0%, rgba(8,8,14,0.95) 100%)'
                     : todayResult.workout.type === 'musculacao'
-                    ? 'rgba(255,95,31,0.04)'
+                    ? 'linear-gradient(135deg, rgba(255,95,31,0.06) 0%, rgba(8,8,14,0.95) 100%)'
                     : todayResult.workout.type === 'corrida'
-                    ? 'rgba(0,212,255,0.04)'
+                    ? 'linear-gradient(135deg, rgba(0,212,255,0.06) 0%, rgba(8,8,14,0.95) 100%)'
                     : 'var(--bg-card)',
                   cursor: todayResult.workout.type !== 'descanso' ? 'pointer' : 'default',
+                  transition: 'all 0.25s ease',
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}
                 onClick={() => {
                   if (todayResult.workout.type !== 'descanso') {
@@ -186,64 +219,90 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                  {/* Workout type icon badge */}
                   <div style={{
-                    width: 56, height: 56,
-                    borderRadius: 16,
+                    width: 52,
+                    height: 52,
+                    borderRadius: 14,
                     background: getWorkoutBg(todayResult.workout),
-                    border: `1px solid ${getWorkoutColor(todayResult.workout)}44`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    border: `1px solid ${getWorkoutColor(todayResult.workout)}55`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     color: getWorkoutColor(todayResult.workout),
                     flexShrink: 0,
+                    boxShadow: `0 0 16px ${getWorkoutColor(todayResult.workout)}22`,
                   }}>
-                    {todayCompleted ? <Trophy size={22} /> : getWorkoutIcon(todayResult.workout)}
+                    {todayCompleted ? <Trophy size={24} /> : getWorkoutIcon(todayResult.workout)}
                   </div>
 
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{
-                        fontFamily: 'var(--font-ui)',
-                        fontWeight: 800,
-                        fontSize: 17,
-                        color: 'var(--text-primary)',
-                      }}>
-                        {todayResult.workout.title}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Category pill tag */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span className={`badge ${todayResult.workout.type === 'musculacao' ? 'badge-orange' : todayResult.workout.type === 'corrida' ? 'badge-cyan' : 'badge-lime'}`} style={{ fontSize: 9 }}>
+                        {todayResult.workout.type.toUpperCase()}
                       </span>
                       {todayCompleted && (
-                        <span className="badge badge-lime" style={{ fontSize: 10 }}>✓ Feito!</span>
+                        <span className="badge badge-lime" style={{ fontSize: 9 }}>✓ CONCLUÍDO</span>
                       )}
                     </div>
-                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: 12 }}>
-                      {todayResult.workout.description}
-                    </div>
 
-                    {/* Workout details */}
-                    <div style={{ display: 'flex', gap: 16 }}>
+                    <h3 style={{
+                      fontFamily: 'var(--font-ui)',
+                      fontWeight: 800,
+                      fontSize: 18,
+                      color: 'var(--text-primary)',
+                      lineHeight: 1.25,
+                      margin: 0,
+                      marginBottom: 6,
+                    }}>
+                      {todayResult.workout.title}
+                    </h3>
+
+                    <p style={{ fontSize: 13, color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0, marginBottom: 14 }}>
+                      {todayResult.workout.description}
+                    </p>
+
+                    {/* Workout details stat chips */}
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                       {todayResult.workout.type === 'musculacao' && (
                         <>
-                          <Stat
-                            label="Exercícios"
-                            value={String((todayResult.workout as StrengthWorkout).exercises.length)}
-                          />
-                          <Stat
-                            label="Duração"
-                            value={`${(todayResult.workout as StrengthWorkout).duration}min`}
-                          />
-                          <Stat
-                            label="Intensidade"
-                            value={(todayResult.workout as StrengthWorkout).intensity.toUpperCase()}
-                          />
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Exercícios</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-orange)' }}>{(todayResult.workout as StrengthWorkout).exercises.length}</span>
+                          </div>
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Duração</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-lime)' }}>{(todayResult.workout as StrengthWorkout).duration} min</span>
+                          </div>
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Intensidade</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-cyan)' }}>{(todayResult.workout as StrengthWorkout).intensity.toUpperCase()}</span>
+                          </div>
+                        </>
+                      )}
+                      {todayResult.workout.type === 'hibrido' && (
+                        <>
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Musculação</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-orange)' }}>{(todayResult.workout as any).strength?.exercises?.length || 8} ex</span>
+                          </div>
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Corrida</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-cyan)' }}>{(todayResult.workout as any).run?.distance || 3.5} km</span>
+                          </div>
                         </>
                       )}
                       {todayResult.workout.type === 'corrida' && (
                         <>
-                          <Stat
-                            label="Distância"
-                            value={`${(todayResult.workout as RunWorkout).distance}km`}
-                          />
-                          <Stat
-                            label="Pace alvo"
-                            value={(todayResult.workout as RunWorkout).paceTarget || '--'}
-                          />
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Distância</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-cyan)' }}>{(todayResult.workout as RunWorkout).distance} km</span>
+                          </div>
+                          <div style={{ background: 'var(--bg-elevated)', padding: '6px 12px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                            <span style={{ fontSize: 10, color: 'var(--text-muted)', display: 'block', fontWeight: 700, textTransform: 'uppercase' }}>Pace Alvo</span>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--accent-lime)' }}>{(todayResult.workout as RunWorkout).paceTarget || '6:00/km'}</span>
+                          </div>
                         </>
                       )}
                     </div>
@@ -252,14 +311,25 @@ export default function Dashboard({ state, onUpdate }: DashboardProps) {
 
                 {/* Start button */}
                 {todayResult.workout.type !== 'descanso' && !todayCompleted && (
-                  <div style={{ marginTop: 16 }}>
+                  <div style={{ marginTop: 18 }}>
                     <button
                       className="btn btn-primary"
-                      style={{ width: '100%', gap: 8 }}
+                      style={{
+                        width: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 8,
+                        padding: '14px 20px',
+                        fontSize: 15,
+                        fontWeight: 800,
+                        letterSpacing: '0.02em',
+                        boxShadow: '0 4px 20px rgba(200,255,0,0.25)',
+                      }}
                       onClick={e => { e.stopPropagation(); navigate(`/treino/${todayResult.dayKey}`); }}
                     >
-                      <Play size={16} fill="currentColor" />
-                      Iniciar treino
+                      <Play size={18} fill="currentColor" />
+                      <span>INICIAR TREINO DE HOJE</span>
                     </button>
                   </div>
                 )}
